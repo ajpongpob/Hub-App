@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>C Major Groove Lab</title>
+<style>
+:root{--bg:#fff4f3;--card:#fffdfd;--ink:#3a2527;--muted:#8d6f72;--accent:#d66f72;--accent2:#f0a06a;--line:#f0d8d8;--dark:#563337}
+*{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:radial-gradient(circle at top right,#f9dfe0,transparent 35%),var(--bg);color:var(--ink)}
+.wrap{max-width:1200px;margin:auto;padding:28px 20px 50px}.top{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:20px}
+h1{font-size:clamp(28px,4vw,48px);margin:0 0 6px;letter-spacing:-1.5px}.sub{color:var(--muted);margin:0}
+.badge{background:#fde2e3;padding:8px 12px;border-radius:999px;font-weight:700;font-size:13px}
+.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:18px}.card{background:rgba(255,255,255,.86);border:1px solid var(--line);border-radius:24px;padding:20px;box-shadow:0 14px 40px #7d444412}
+.card h2{margin:0 0 14px;font-size:18px}.controls{display:flex;flex-wrap:wrap;gap:10px}.btn,select,input{font:inherit}.btn{border:0;border-radius:14px;padding:11px 15px;background:#fae8e8;color:var(--ink);font-weight:800;cursor:pointer}.btn:hover{filter:brightness(.97)}.btn.active,.btn.primary{background:var(--accent);color:white}.btn.stop{background:#f4dfd7;color:#704238}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0}.tempo{display:flex;align-items:center;gap:10px}.tempo input{width:150px;accent-color:var(--accent)}
+.chords{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.chord{background:var(--dark);color:white;border:0;border-radius:17px;padding:15px;cursor:pointer;text-align:left}.chord b{display:block;font-size:23px}.chord span{font-size:12px;opacity:.72}
+.sequence{display:flex;gap:8px;flex-wrap:wrap}.pill{padding:8px 11px;background:#f9eeee;border-radius:999px;font-weight:700}.pill.now{background:var(--accent);color:#fff}
+.fret-wrap{overflow:auto;padding-bottom:6px}.neck{min-width:760px;background:#b98355;border-radius:18px;padding:14px;position:relative;box-shadow:inset 0 0 0 3px #9e6b43}
+.fretboard{position:relative;height:260px;background:linear-gradient(90deg,#543b2d,#73503b 12%,#654633 100%);border-radius:12px;overflow:hidden}
+.fret{position:absolute;top:0;bottom:0;width:3px;background:#d6d8d0aa}.nut{width:7px!important;background:#eee!important}
+.string{position:absolute;left:0;right:0;height:2px;background:#d7d0bd;box-shadow:0 1px #392d27}.slabel{position:absolute;left:10px;font-size:11px;color:#fff8;transform:translateY(-7px)}
+.marker{position:absolute;transform:translate(-50%,-50%);width:34px;height:34px;border-radius:50%;background:var(--accent2);color:#3d2b19;display:grid;place-items:center;font-weight:900;border:3px solid #fff;box-shadow:0 4px 10px #0004;z-index:3}
+.open{background:#fff;color:var(--ink);border-color:var(--accent)}
+.muted{background:#354f49;color:white;border-color:#fff8}
+.legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin-top:10px}
+.guitar-art{height:190px;border-radius:20px;background:linear-gradient(135deg,#fce5e4,#fff0df);display:grid;place-items:center;overflow:hidden}
+.guitar-art svg{width:95%;height:95%}
+.info{font-size:13px;color:var(--muted);line-height:1.6}.status{font-weight:800;color:var(--accent)}
+@media(max-width:850px){.grid{grid-template-columns:1fr}.chords{grid-template-columns:repeat(2,1fr)}.top{align-items:start;flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div><div class="badge">GUITAR PRACTICE • C MAJOR</div><h1>Groove Lab</h1><p class="sub">ฝึกคอร์ดพื้นฐาน พร้อมดูนิ้วบนฟิงเกอร์บอร์ดและฟัง groove แบบ Reggae / Ska</p></div>
+    <div class="status" id="status">● Ready</div>
+  </div>
+
+  <div class="grid">
+    <section class="card">
+      <h2>เลือกสไตล์</h2>
+      <div class="controls">
+        <button class="btn style" data-style="reggae">Reggae</button>
+        <button class="btn style" data-style="ska">Ska</button>
+        <button class="btn stop" id="stop">■ Stop</button>
+      </div>
+      <div class="row"><div class="tempo">Tempo <b id="bpmText">100</b> BPM</div><input id="bpm" type="range" min="70" max="150" value="100"></div>
+      <h2>คอร์ดใน C Major</h2>
+      <div class="chords" id="chords"></div>
+      <h2 style="margin-top:20px">Progression</h2>
+      <div class="sequence" id="sequence"></div>
+    </section>
+
+    <section class="card">
+      <h2>Guitar Character</h2>
+      <div class="guitar-art">
+        <svg viewBox="0 0 760 330" role="img" aria-label="realistic Telecaster-inspired guitar illustration">
+<defs>
+ <linearGradient id="sunburst" x1="0" y1="0" x2="1" y2="1">
+   <stop stop-color="#3a1b1b" offset="0"/>
+   <stop stop-color="#8d2728" offset=".22"/>
+   <stop stop-color="#e17b38" offset=".52"/>
+   <stop stop-color="#8f2527" offset=".78"/>
+   <stop stop-color="#301515" offset="1"/>
+ </linearGradient>
+ <linearGradient id="maple" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#e7bd83"/><stop offset=".5" stop-color="#c98d5a"/><stop offset="1" stop-color="#e0ad72"/></linearGradient>
+ <linearGradient id="rose" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#4a2928"/><stop offset="1" stop-color="#231718"/></linearGradient>
+ <filter id="gshadow"><feDropShadow dx="0" dy="9" stdDeviation="7" flood-opacity=".22"/></filter>
+</defs>
+<g transform="translate(22 5)" filter="url(#gshadow)">
+ <!-- Telecaster headstock, modeled on real Tele proportions -->
+ <path d="M596 111 C622 105 665 94 707 95 L722 111 L719 159 L696 166 L684 151 L598 145 Z"
+       fill="url(#maple)" stroke="#7e553c" stroke-width="3"/>
+ <path d="M701 101 L718 109 L716 156 L699 162" fill="#d19b64"/>
+ <!-- tuning machines -->
+ <g fill="#b9b9b5" stroke="#55504d" stroke-width="2">
+   <ellipse cx="700" cy="111" rx="10" ry="6"/><ellipse cx="703" cy="126" rx="10" ry="6"/><ellipse cx="704" cy="143" rx="10" ry="6"/>
+   <ellipse cx="719" cy="116" rx="7" ry="5"/><ellipse cx="718" cy="133" rx="7" ry="5"/><ellipse cx="716" cy="149" rx="7" ry="5"/>
+ </g>
+ <!-- maple neck -->
+ <path d="M172 119 L603 108 L605 150 L172 161 Z" fill="url(#maple)" stroke="#775039" stroke-width="3"/>
+ <!-- rosewood fingerboard overlay -->
+ <path d="M184 121 L597 111 L599 148 L184 158 Z" fill="url(#rose)"/>
+ <!-- frets -->
+ <g stroke="#bfc0bc" stroke-width="2">
+  <path d="M224 120l1 37M265 119l1 37M306 118l1 38M347 117l1 37M388 116l1 37M429 115l1 36M470 114l1 35M511 113l1 34M552 112l1 33M583 111l1 32"/>
+ </g>
+ <!-- dot inlays -->
+ <g fill="#e9ded0">
+   <circle cx="244" cy="139" r="4"/><circle cx="285" cy="138" r="4"/><circle cx="326" cy="137" r="4"/>
+   <circle cx="408" cy="135" r="4"/><circle cx="490" cy="132" r="4"/><circle cx="572" cy="130" r="4"/>
+   <circle cx="449" cy="130" r="3.5"/><circle cx="449" cy="140" r="3.5"/>
+ </g>
+ <!-- classic Tele body -->
+ <path d="M104 83
+ C77 67 43 78 39 108
+ C36 133 49 151 70 157
+ C84 161 90 173 91 191
+ C92 218 115 235 143 230
+ C169 226 181 207 187 183
+ C192 162 207 150 225 142
+ L230 117
+ C207 110 192 101 185 83
+ C176 58 153 44 127 48
+ C110 50 100 64 104 83 Z"
+ fill="url(#sunburst)" stroke="#321817" stroke-width="4"/>
+ <!-- body highlight / wood grain -->
+ <path d="M68 103 C92 76 128 67 164 82 M54 132 C93 111 143 107 180 123 M72 170 C108 153 151 151 181 161 M105 207 C130 191 154 188 176 194"
+       fill="none" stroke="#f6b064" stroke-opacity=".22" stroke-width="4"/>
+ <!-- white 3-ply pickguard -->
+ <path d="M87 86 C108 69 146 69 171 88 L194 117
+ C178 134 153 143 119 137 L78 116 Z"
+ fill="#f3eee5" stroke="#c7bdb2" stroke-width="3"/>
+ <!-- neck pickup -->
+ <rect x="102" y="91" width="62" height="10" rx="3" fill="#d6d1ca" stroke="#4a4542" stroke-width="2"/>
+ <g fill="#6e6a66"><circle cx="111" cy="96" r="2"/><circle cx="121" cy="96" r="2"/><circle cx="131" cy="96" r="2"/><circle cx="141" cy="96" r="2"/><circle cx="151" cy="96" r="2"/></g>
+ <!-- Tele bridge -->
+ <path d="M87 119 L170 119 L175 145 L84 145 Z" fill="#c8c6c0" stroke="#69635e" stroke-width="3"/>
+ <g stroke="#77716d" stroke-width="2"><path d="M96 125h66M96 132h66M96 139h66"/></g>
+ <g fill="#e6e2db" stroke="#77716d" stroke-width="1"><circle cx="99" cy="126" r="3"/><circle cx="114" cy="126" r="3"/><circle cx="129" cy="126" r="3"/><circle cx="144" cy="126" r="3"/><circle cx="159" cy="126" r="3"/></g>
+ <!-- bridge pickup -->
+ <path d="M96 108 L157 108 L165 116 L91 116 Z" fill="#2e2826"/>
+ <g fill="#b8b0aa"><circle cx="103" cy="112" r="2"/><circle cx="114" cy="112" r="2"/><circle cx="125" cy="112" r="2"/><circle cx="136" cy="112" r="2"/><circle cx="147" cy="112" r="2"/></g>
+ <!-- chrome control plate -->
+ <path d="M157 147 L186 149 L181 181 L151 176 Z" fill="#c8c7c3" stroke="#68635f" stroke-width="2"/>
+ <circle cx="169" cy="157" r="6" fill="#ddd9d1" stroke="#67615e" stroke-width="2"/>
+ <circle cx="166" cy="171" r="7" fill="#ddd9d1" stroke="#67615e" stroke-width="2"/>
+ <path d="M182 153l10 1" stroke="#4e4946" stroke-width="4"/>
+ <!-- strings -->
+ <g stroke="#f2eadf" stroke-width="1.2" opacity=".9">
+  <path d="M117 108 L709 111"/><path d="M117 113 L709 116"/><path d="M117 118 L709 121"/>
+  <path d="M117 123 L709 126"/><path d="M117 128 L709 131"/><path d="M117 133 L709 136"/>
+ </g>
+ <!-- nut -->
+ <rect x="590" y="110" width="7" height="39" rx="2" fill="#f0e6d8" stroke="#887260" stroke-width="1"/>
+ <!-- jack plate / strap buttons -->
+ <circle cx="74" cy="187" r="5" fill="#c7c3bd" stroke="#625c57"/>
+ <circle cx="177" cy="205" r="5" fill="#c7c3bd" stroke="#625c57"/>
+</g></svg>
+      </div>
+      <p class="info">เสียงใช้ physical-model plucked string เพื่อให้ attack และ decay ใกล้กีตาร์ไฟฟ้ามากขึ้น โดยไม่ต้องโหลดไฟล์เสียงภายนอก<br>ภาพอ้างอิงสัดส่วนและฮาร์ดแวร์จาก Telecaster จริง โดยดูจากภาพผลิตภัณฑ์ Telecaster ของ Fender แล้ววาดใหม่เป็น illustration แบบละเอียดในไฟล์ HTML (ไม่ได้ฝังภาพสินค้าจากเว็บโดยตรง)</p>
+    </section>
+  </div>
+
+  <section class="card" style="margin-top:18px">
+    <div class="row"><h2 style="margin:0">Fretboard • 6 Strings</h2><span id="currentChord" class="badge">เลือกคอร์ด</span></div>
+    <div class="fret-wrap"><div class="neck"><div class="fretboard" id="board"></div></div></div>
+    <div class="legend"><span>● นิ้วที่กด</span><span>○ สายเปิด</span><span>× สายไม่เล่น</span><span>เลข = fret</span></div>
+  </section>
+</div>
+
+<script>
+const chords={
+ C:{shape:[-1,3,2,0,1,0],notes:[48,52,55,60,64,60],degree:"I"},
+ Am:{shape:[-1,0,2,2,1,0],notes:[45,52,55,60,64,60],degree:"vi"},
+ F:{shape:[1,3,3,2,1,1],notes:[41,48,53,57,60,65],degree:"IV"},
+ G:{shape:[3,2,0,0,0,3],notes:[43,47,55,59,62,67],degree:"V"},
+ Em:{shape:[0,2,2,0,0,0],notes:[40,47,52,55,59,64],degree:"iii"},
+ Dm:{shape:[-1,0,0,2,3,1],notes:[38,50,57,62,65,69],degree:"ii"}
+};
+const progressions={
+ reggae:["C","G","Am","F"],
+ ska:["C","F","G","C","Am","F","G","C"]
+};
+let style="reggae", playing=false, timer=null, step=0, bpm=100, ctx=null;
+const $=id=>document.getElementById(id);
+
+function drawBoard(chordName){
+ const board=$("board"); board.innerHTML="";
+ const c=chords[chordName], w=board.clientWidth||760, left=42, usable=w-left-12;
+ for(let f=0;f<=12;f++){const x=left+usable*(f/13);let el=document.createElement("div");el.className="fret"+(f===0?" nut":"");el.style.left=x+"px";board.appendChild(el)}
+ for(let s=0;s<6;s++){let y=22+s*43;let line=document.createElement("div");line.className="string";line.style.top=y+"px";line.style.height=(s<3?2:3)+"px";board.appendChild(line);
+   let lab=document.createElement("div");lab.className="slabel";lab.style.top=y+"px";lab.textContent=["E","A","D","G","B","e"][s];board.appendChild(lab);
+   let fret=c.shape[s]; if(fret<0){let m=document.createElement("div");m.className="marker muted";m.style.left="18px";m.style.top=y+"px";m.textContent="×";board.appendChild(m)}
+   else if(fret===0){let m=document.createElement("div");m.className="marker open";m.style.left=(left-8)+"px";m.style.top=y+"px";m.textContent="○";board.appendChild(m)}
+   else {let x=left+usable*((fret-.5)/13);let m=document.createElement("div");m.className="marker";m.style.left=x+"px";m.style.top=y+"px";m.textContent=fret;board.appendChild(m)}
+ }
+ for(let f=3;f<=12;f+=2){let dot=document.createElement("div");dot.style.cssText=`position:absolute;left:${left+usable*((f-.5)/13)-5}px;top:124px;width:10px;height:10px;border-radius:50%;background:#ffffff35`;board.appendChild(dot)}
+ $("currentChord").textContent=chordName+" • "+c.degree;
+}
+
+function renderChords(){ $("chords").innerHTML=""; Object.keys(chords).forEach(n=>{let b=document.createElement("button");b.className="chord";b.innerHTML=`<b>${n}</b><span>${chords[n].degree} • click to play</span>`;b.onclick=()=>playChord(n);$("chords").appendChild(b)})}
+function renderSeq(){ $("sequence").innerHTML=progressions[style].map((n,i)=>`<span class="pill ${i===step?"now":""}">${n}</span>`).join("")}
+
+function ensureAudio(){if(!ctx)ctx=new (window.AudioContext||window.webkitAudioContext)(); if(ctx.state==="suspended")ctx.resume()}
+function tone(freq,t,dur,type="triangle",gain=.08){const o=ctx.createOscillator(),g=ctx.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(gain,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g).connect(ctx.destination);o.start(t);o.stop(t+dur+.03)}
+function guitarNote(freq,t,dur=.72,velocity=.8){
+  // Karplus-Strong style plucked-string guitar: short excitation + filtered feedback.
+  const sr=ctx.sampleRate, N=Math.max(2,Math.round(sr/freq)), len=Math.round(sr*(dur+.12));
+  const buf=ctx.createBuffer(1,len,sr), data=buf.getChannelData(0);
+  const exc=Math.min(N,Math.round(sr*.018));
+  for(let i=0;i<exc;i++) data[i]=(Math.random()*2-1)*Math.pow(1-i/exc,1.7);
+  for(let i=exc;i<len;i++){
+    const j=i-N; data[i]=(data[j]+(j>0?data[j-1]:0))*.495;
+  }
+  const src=ctx.createBufferSource(), filt=ctx.createBiquadFilter(), gain=ctx.createGain();
+  filt.type="lowpass"; filt.frequency.setValueAtTime(Math.min(6200,1800+freq*5),t);
+  gain.gain.setValueAtTime(.0001,t); gain.gain.exponentialRampToValueAtTime(.12*velocity,t+.004);
+  gain.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  src.buffer=buf; src.connect(filt).connect(gain).connect(ctx.destination); src.start(t); src.stop(t+dur+.03);
+}
+function chordSound(name,t,short=false){
+  const c=chords[name];
+  // Stagger strings like a real downstroke; short mode is muted/percussive.
+  c.notes.forEach((n,i)=>{
+    const freq=440*Math.pow(2,(n-69)/12);
+    if(short) guitarNote(freq,t+i*.006,.16,.45);
+    else guitarNote(freq,t+i*.012,.9,.72);
+  });
+}
+function noise(t,dur=.045,gain=.022){
+  const b=ctx.createBuffer(1,Math.max(1,Math.round(ctx.sampleRate*dur)),ctx.sampleRate),a=b.getChannelData(0);
+  for(let i=0;i<a.length;i++)a[i]=(Math.random()*2-1)*Math.pow(1-i/a.length,2);
+  const s=ctx.createBufferSource(),g=ctx.createGain();s.buffer=b;g.gain.value=gain;s.connect(g).connect(ctx.destination);s.start(t);
+}
+function grooveTick(name,t,beat){
+ const styleData={reggae:[0,1,2,3],ska:[0,.5,1,1.5,2,2.5,3,3.5]};
+ const pattern=styleData[style]; if(pattern.includes(beat)){
+   const off=style==="reggae" ? .25 : .02;
+   chordSound(name,t+off,true); noise(t+off,.045,style==="ska"?.025:.018);
+ }
+ if(beat===0){tone(55,t,.20,"sine",.045)}
+}
+function playChord(name){ensureAudio(); chordSound(name,ctx.currentTime); drawBoard(name); $("status").textContent="● Playing "+name}
+function loop(){
+ if(!playing)return; ensureAudio(); const seq=progressions[style], name=seq[step%seq.length]; drawBoard(name); renderSeq();
+ const beatDur=60/bpm; const start=ctx.currentTime+.03;
+ if(style==="reggae"){for(let b=0;b<4;b++)grooveTick(name,start+b*beatDur,b)}
+ else {for(let b=0;b<8;b++)grooveTick(name,start+b*beatDur/2,b/2)}
+ $("status").textContent=`● ${style.toUpperCase()} • ${name}`;
+ step=(step+1)%seq.length;
+ timer=setTimeout(loop,beatDur*4000-30);
+}
+document.querySelectorAll(".style").forEach(btn=>btn.onclick=()=>{document.querySelectorAll(".style").forEach(x=>x.classList.remove("active"));btn.classList.add("active");style=btn.dataset.style;step=0;renderSeq();if(playing){clearTimeout(timer);loop()}});
+$("stop").onclick=()=>{playing=false;clearTimeout(timer);$("status").textContent="● Stopped";document.querySelectorAll(".pill").forEach(x=>x.classList.remove("now"))};
+document.querySelector(".primary")?.addEventListener("click",()=>{});
+document.querySelectorAll(".style").forEach(()=>{});
+const playBtn=document.createElement("button");playBtn.className="btn primary";playBtn.textContent="▶ Play Groove";playBtn.onclick=()=>{if(!playing){playing=true;step=0;loop()}};
+document.querySelector(".controls").insertBefore(playBtn,document.getElementById("stop"));
+$("bpm").oninput=e=>{bpm=+e.target.value;$("bpmText").textContent=bpm;if(playing){clearTimeout(timer);loop()}};
+renderChords();renderSeq();drawBoard("C");
+</script>
+</body>
+</html>
