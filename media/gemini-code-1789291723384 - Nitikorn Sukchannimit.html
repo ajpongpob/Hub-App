@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Interactive Drum Kit & Sheet Music Simulator</title>
+    <style>
+        :root {
+            --bg-color: #121316;
+            --panel-bg: #1e2026;
+            --accent-color: #ff9800;
+            --text-color: #ffffff;
+        }
+
+        body {
+            font-family: 'Sukhumvit Set', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+            color: var(--accent-color);
+            text-shadow: 0 0 10px rgba(255, 152, 0, 0.3);
+        }
+
+        p.subtitle {
+            margin-top: 0;
+            color: #aaa;
+            font-size: 0.9em;
+        }
+
+        .controls {
+            background-color: var(--panel-bg);
+            padding: 15px 25px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        select, input, button {
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: 1px solid #444;
+            background-color: #2b2e38;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: #000;
+            font-weight: bold;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background-color: #e68a00;
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            background-color: #555;
+            color: #888;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .info-box {
+            background-color: #1a1c23;
+            border-left: 4px solid var(--accent-color);
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            width: 100%;
+            max-width: 870px;
+            font-size: 0.9em;
+            color: #ccc;
+        }
+
+        .mixer-panel {
+            background-color: var(--panel-bg);
+            border-radius: 10px;
+            padding: 12px 20px;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 860px;
+        }
+
+        .mixer-channel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.85em;
+        }
+
+        .mixer-channel input[type="range"] {
+            width: 90px;
+            accent-color: var(--accent-color);
+        }
+
+        .btn-mute {
+            padding: 2px 8px;
+            font-size: 11px;
+            background-color: #383c4a;
+            color: #ccc;
+        }
+
+        .btn-mute.muted {
+            background-color: #e53935;
+            color: #fff;
+        }
+
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .canvas-card {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.6);
+            text-align: center;
+        }
+
+        .canvas-card h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #ddd;
+            font-size: 1.1em;
+            text-align: left;
+        }
+
+        canvas {
+            background-color: #0b0c0e;
+            border-radius: 8px;
+            max-width: 100%;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 10px;
+            font-size: 0.85em;
+            color: #bbb;
+            flex-wrap: wrap;
+        }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    </style>
+</head>
+<body>
+
+    <h1>🥁 3D Interactive Drum Kit & Sheet Music Simulator</h1>
+    <p class="subtitle">จำลองกลองชุด 3D พร้อมโน้ตบรรทัด 5 เส้น (กด A=Kick, S=Snare, K=Hi-Hat, R=Ride, J/L=Toms หรือคลิกกลอง 3D)</p>
+
+    <!-- Main Controls -->
+    <div class="controls">
+        <div>
+            <label for="genre-select">แนวเพลง: </label>
+            <select id="genre-select">
+                <option value="pop">Pop (ป๊อป)</option>
+                <option value="rock">Rock (ร็อก)</option>
+                <option value="hiphop">Hip Hop / Rap (ฮิปฮอป)</option>
+                <option value="rnb">R&B (ริทึมแอนด์บลูส์)</option>
+                <option value="jazz">Jazz (แจ๊ส - Swing)</option>
+                <option value="metal">Metal (เมทัล - กระเดื่องคู่)</option>
+                <option value="ska">Ska (สกา)</option>
+                <option value="reggae">Reggae (เร็กเก้ - One Drop)</option>
+                <option value="bossa">Bossa Nova (บอสซาโนวา)</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="bpm-input">ความเร็ว (BPM): </label>
+            <input type="number" id="bpm-input" min="50" max="220" value="110" style="width: 60px;">
+        </div>
+
+        <button id="btn-play">▶ เล่น (Play)</button>
+        <button id="btn-stop" disabled>◼ หยุด (Stop)</button>
+    </div>
+
+    <!-- Genre Description Box -->
+    <div class="info-box" id="genre-info">
+        💡 <b>Pop:</b> จังหวะมาตรฐาน 4/4 ฟังง่าย สม่ำเสมอ เหมาะสำหรับการเริ่มต้นเรียนรู้จังหวะกลองพื้นฐาน
+    </div>
+
+    <!-- Audio Mixer -->
+    <div class="mixer-panel">
+        <div class="mixer-channel">
+            <span style="color:#00e676; font-weight:bold;">Hi-Hat (K)</span>
+            <input type="range" id="vol-hihat" min="0" max="1" step="0.05" value="0.8">
+            <button class="btn-mute" id="mute-hihat">Mute</button>
+        </div>
+        <div class="mixer-channel">
+            <span style="color:#ffd700; font-weight:bold;">Ride (R)</span>
+            <input type="range" id="vol-ride" min="0" max="1" step="0.05" value="0.7">
+            <button class="btn-mute" id="mute-ride">Mute</button>
+        </div>
+        <div class="mixer-channel">
+            <span style="color:#ff3d00; font-weight:bold;">Snare (S)</span>
+            <input type="range" id="vol-snare" min="0" max="1" step="0.05" value="0.8">
+            <button class="btn-mute" id="mute-snare">Mute</button>
+        </div>
+        <div class="mixer-channel">
+            <span style="color:#29b6f6; font-weight:bold;">Kick (A/Space)</span>
+            <input type="range" id="vol-kick" min="0" max="1" step="0.05" value="0.9">
+            <button class="btn-mute" id="mute-kick">Mute</button>
+        </div>
+        <div class="mixer-channel">
+            <span style="color:#ab47bc; font-weight:bold;">Toms (J/L)</span>
+            <input type="range" id="vol-toms" min="0" max="1" step="0.05" value="0.8">
+            <button class="btn-mute" id="mute-toms">Mute</button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <!-- Drum Sheet Music Notation Canvas -->
+        <div class="canvas-card">
+            <h3>🎼 โน้ตบรรทัด 5 เส้น (Drum Sheet Notation)</h3>
+            <canvas id="staff-canvas" width="850" height="150"></canvas>
+            <div class="legend">
+                <div class="legend-item"><span class="legend-dot" style="background:#00e676;"></span> Hi-Hat / Ride (✖ บนสุด)</div>
+                <div class="legend-item"><span class="legend-dot" style="background:#ff3d00;"></span> Snare Drum (ช่องที่ 3)</div>
+                <div class="legend-item"><span class="legend-dot" style="background:#29b6f6;"></span> Bass Drum (ช่องล่างสุด)</div>
+            </div>
+        </div>
+
+        <!-- 3D Drum Kit Model Canvas -->
+        <div class="canvas-card">
+            <h3>🥁 โมเดลกลองชุด 3D (Isometric Angle View)</h3>
+            <canvas id="drum-canvas" width="850" height="380"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // --- Audio Context Setup ---
+        let audioCtx = null;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        // Mixer Volumes & Mute States
+        const mixer = {
+            hihat: { vol: 0.8, mute: false },
+            ride:  { vol: 0.7, mute: false },
+            snare: { vol: 0.8, mute: false },
+            kick:  { vol: 0.9, mute: false },
+            toms:  { vol: 0.8, mute: false }
+        };
+
+        // --- Sound Synthesizers (Web Audio API) ---
+        function playKick(time = 0) {
+            if (mixer.kick.mute) return;
+            const ctx = getAudioContext();
+            const now = time || ctx.currentTime;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            
+            osc.frequency.setValueAtTime(130, now);
+            osc.frequency.exponentialRampToValueAtTime(0.01, now + 0.15);
+            
+            gain.gain.setValueAtTime(mixer.kick.vol, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+            
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            osc.start(now);
+            osc.stop(now + 0.15);
+            triggerVisual('kick');
+        }
+
+        function playSnare(time = 0) {
+            if (mixer.snare.mute) return;
+            const ctx = getAudioContext();
+            const now = time || ctx.currentTime;
+            
+            const osc = ctx.createOscillator();
+            const oscGain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(180, now);
+            osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+            oscGain.gain.setValueAtTime(0.7 * mixer.snare.vol, now);
+            oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.connect(oscGain);
+            oscGain.connect(ctx.destination);
+            
+            const bufferSize = ctx.sampleRate * 0.2;
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            const noise = ctx.createBufferSource();
+            noise.buffer = buffer;
+            
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'highpass';
+            filter.frequency.value = 1000;
+            
+            const noiseGain = ctx.createGain();
+            noiseGain.gain.setValueAtTime(0.8 * mixer.snare.vol, now);
+            noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+            
+            noise.connect(filter);
+            filter.connect(noiseGain);
+            noiseGain.connect(ctx.destination);
+            
+            osc.start(now);
+            osc.stop(now + 0.2);
+            noise.start(now);
+            noise.stop(now + 0.2);
+            
+            triggerVisual('snare');
+        }
+
+        function playHiHat(time = 0, open = false) {
+            if (mixer.hihat.mute) return;
+            const ctx = getAudioContext();
+            const now = time || ctx.currentTime;
+            const duration = open ? 0.3 : 0.05;
+            
+            const bufferSize = ctx.sampleRate * duration;
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            
+            const noise = ctx.createBufferSource();
+            noise.buffer = buffer;
+            
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'highpass';
+            filter.frequency.value = 7000;
+            
+            const gain = ctx.createGain();
+            gain.gain.setValueAtTime(0.4 * mixer.hihat.vol, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+            
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+            
+            noise.start(now);
+            noise.stop(now + duration);
+            
+            triggerVisual('hihat');
+        }
+
+        function playRide(time = 0) {
+            if (mixer.ride.mute) return;
+            const ctx = getAudioContext();
+            const now = time || ctx.currentTime;
+            const duration = 0.5;
+            
+            const bufferSize = ctx.sampleRate * duration;
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            
+            const noise = ctx.createBufferSource();
+            noise.buffer = buffer;
+            
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.value = 4500;
+            
+            const gain = ctx.createGain();
+            gain.gain.setValueAtTime(0.5 * mixer.ride.vol, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+            
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+            
+            noise.start(now);
+            noise.stop(now + duration);
+            
+            triggerVisual('ride');
+        }
+
+        function playTom(freq, time = 0) {
+            if (mixer.toms.mute) return;
+            const ctx = getAudioContext();
+            const now = time || ctx.currentTime;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            
+            osc.frequency.setValueAtTime(freq, now);
+            osc.frequency.exponentialRampToValueAtTime(freq * 0.4, now + 0.2);
+            
+            gain.gain.setValueAtTime(0.7 * mixer.toms.vol, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+            
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            osc.start(now);
+            osc.stop(now + 0.2);
+            
+            triggerVisual(freq > 120 ? 'hiTom' : 'lowTom');
+        }
+
+        // --- Drum Patterns ---
+        const patterns = {
+            pop: {
+                defaultBpm: 110,
+                info: "💡 <b>Pop:</b> จังหวะมาตรฐาน 4/4 ฟังง่าย สม่ำเสมอ เหมาะสำหรับการเริ่มต้นเรียนรู้จังหวะกลองพื้นฐาน",
+                k:  [1,0,0,0, 0,0,0,0, 1,0,1,0, 0,0,0,0],
+                s:  [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+                h:  [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0]
+            },
+            rock: {
+                defaultBpm: 125,
+                info: "🎸 <b>Rock:</b> ตี Hi-Hat ถี่สไตล์ 8th-note เน้น Snare หนักแน่นที่จังหวะ 2 และ 4 เพื่อส่งพลังของบทเพลง",
+                k:  [1,0,0,0, 0,0,0,0, 1,0,1,0, 0,0,0,0],
+                s:  [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+                h:  [1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1]
+            },
+            hiphop: {
+                defaultBpm: 90,
+                info: "🎤 <b>Hip Hop / Rap:</b> จังหวะหนืด ช้า มีการเบิ้ล Kick ยกจังหวะสวมกรูฟ และเล่น Open Hi-Hat ท้ายห้อง",
+                k:  [1,0,0,0, 0,0,1,0, 0,0,1,0, 0,0,0,0],
+                s:  [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+                h:  [1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,0],
+                o:  [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,1]
+            },
+            rnb: {
+                defaultBpm: 85,
+                info: "🎷 <b>R&B:</b> เน้นความพริ้วไหวของ Syncopation (ยกจังหวะ) ใส่ลูกหยอด Kick และ Snare ให้ฟังดูผ่อนคลาย",
+                k:  [1,0,0,1, 0,0,0,0, 0,0,1,0, 0,0,0,0],
+                s:  [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,1],
+                h:  [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0]
+            },
+            jazz: {
+                defaultBpm: 130,
+                info: "🎺 <b>Jazz (Swing):</b> จังหวะแบบสวิง ลื่นไหล ใช้ Ride Cymbal เล่าเรื่องหลัก และเคาะ Hi-Hat ที่จังหวะ 2 และ 4",
+                k:  [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0],
+                s:  [0,0,0,0, 0,0,1,0, 0,0,0,0, 0,0,1,0],
+                r:  [1,0,0,1, 1,0,0,1, 1,0,0,1, 1,0,0,1]
+            },
+            metal: {
+                defaultBpm: 160,
+                info: "⚡ <b>Metal:</b> โดดเด่นด้วยการเหยียบกระเดื่องคู่ (Double Bass Drum) ถี่และรวดเร็วต่อเนื่อง",
+                k:  [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0],
+                s:  [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+                h:  [1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1]
+            },
+            ska: {
+                defaultBpm: 135,
+                info: "🎺 <b>Ska (สกา):</b> จังหวะเร็วสนุกสนาน เน้นเคาะ Hi-Hat หรือ Ride จังหวะขัด และ Snare สดใสรวดเร็ว",
+                k:  [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0],
+                s:  [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+                h:  [0,1,0,1, 0,1,0,1, 0,1,0,1, 0,1,0,1]
+            },
+            reggae: {
+                defaultBpm: 78,
+                info: "🌴 <b>Reggae (เร็กเก้):</b> โดดเด่นด้วยรูปแบบ <b>One Drop</b> โดย Kick และ Snare จะตีพร้อมกันอย่างหนักแน่นที่จังหวะ 3 เท่านั้น",
+                k:  [0,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0],
+                s:  [0,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0],
+                h:  [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0]
+            },
+            bossa: {
+                defaultBpm: 120,
+                info: "☕ <b>Bossa Nova (บอสซาโนวา):</b> ดนตรีละตินแจ๊สนุ่มนวล ใช้เคาะขอบสแนร์ (Rimshot) และ Kick ยกจังหวะอย่างซับซ้อน",
+                k:  [1,0,0,0, 0,0,1,0, 1,0,0,0, 0,0,1,0],
+                s:  [1,0,0,1, 0,0,1,0, 0,0,1,0, 0,1,0,0],
+                r:  [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0]
+            }
+        };
+
+        // --- Sequencer State ---
+        let isPlaying = false;
+        let currentStep = 0;
+        let nextNoteTime = 0;
+        let timerId = null;
+        let activeElements = {};
+
+        function triggerVisual(part) {
+            activeElements[part] = Date.now();
+        }
+
+        function scheduler() {
+            const ctx = getAudioContext();
+            while (nextNoteTime < ctx.currentTime + 0.1) {
+                scheduleNote(currentStep, nextNoteTime);
+                nextStep();
+            }
+            if (isPlaying) {
+                timerId = setTimeout(scheduler, 25);
+            }
+        }
+
+        function scheduleNote(step, time) {
+            const genre = document.getElementById('genre-select').value;
+            const pat = patterns[genre];
+
+            if (pat.k && pat.k[step]) playKick(time);
+            if (pat.s && pat.s[step]) playSnare(time);
+            if (pat.h && pat.h[step]) playHiHat(time, false);
+            if (pat.o && pat.o[step]) playHiHat(time, true);
+            if (pat.r && pat.r[step]) playRide(time);
+            if (pat.t1 && pat.t1[step]) playTom(150, time);
+            if (pat.t2 && pat.t2[step]) playTom(90, time);
+        }
+
+        function nextStep() {
+            const bpm = parseInt(document.getElementById('bpm-input').value);
+            const secondsPerBeat = 60.0 / bpm;
+            nextNoteTime += 0.25 * secondsPerBeat;
+            currentStep = (currentStep + 1) % 16;
+        }
+
+        // --- Visualizer Rendering (Canvas) ---
+        const drumCanvas = document.getElementById('drum-canvas');
+        const drumCtx = drumCanvas.getContext('2d');
+        const staffCanvas = document.getElementById('staff-canvas');
+        const staffCtx = staffCanvas.getContext('2d');
+
+        // 3D Layout Coordinates (Isometric View)
+        const drumParts3D = {
+            hihat:  { x: 170, y: 170, rx: 65, ry: 25, depth: 15, color: '#00e676', label: 'Hi-Hat (K)', type: 'cymbal' },
+            ride:   { x: 680, y: 140, rx: 90, ry: 35, depth: 18, color: '#ffd700', label: 'Ride (R)', type: 'cymbal' },
+            hiTom:  { x: 340, y: 150, rx: 55, ry: 35, depth: 55, color: '#ab47bc', label: 'Tom 1 (J)', type: 'drum', shellColor: '#8e24aa' },
+            lowTom: { x: 480, y: 150, rx: 60, ry: 38, depth: 60, color: '#7e57c2', label: 'Tom 2 (L)', type: 'drum', shellColor: '#5e35b1' },
+            snare:  { x: 250, y: 260, rx: 65, ry: 38, depth: 45, color: '#ff3d00', label: 'Snare (S)', type: 'drum', shellColor: '#d32f2f' },
+            kick:   { x: 410, y: 250, rx: 95, ry: 60, depth: 75, color: '#29b6f6', label: 'Kick (A)', type: 'drum', shellColor: '#0288d1' }
+        };
+
+        function draw3DDrum(partKey, part) {
+            const now = Date.now();
+            const isHit = activeElements[partKey] && (now - activeElements[partKey] < 120);
+            const bounce = isHit ? 5 : 0;
+            
+            const x = part.x;
+            const y = part.y + bounce;
+            const rx = part.rx + (isHit ? 3 : 0);
+            const ry = part.ry + (isHit ? 2 : 0);
+            const depth = part.depth;
+
+            drumCtx.save();
+
+            if (part.type === 'drum') {
+                // Draw 3D Drum Shell (Side Body)
+                drumCtx.beginPath();
+                drumCtx.ellipse(x, y + depth, rx, ry, 0, 0, Math.PI);
+                drumCtx.lineTo(x - rx, y);
+                drumCtx.ellipse(x, y, rx, ry, 0, Math.PI, 0, true);
+                drumCtx.lineTo(x + rx, y + depth);
+                
+                const shellGrad = drumCtx.createLinearGradient(x - rx, y, x + rx, y);
+                shellGrad.addColorStop(0, '#111');
+                shellGrad.addColorStop(0.3, part.shellColor);
+                shellGrad.addColorStop(0.7, part.shellColor);
+                shellGrad.addColorStop(1, '#111');
+                drumCtx.fillStyle = shellGrad;
+                drumCtx.fill();
+                drumCtx.strokeStyle = '#333';
+                drumCtx.lineWidth = 2;
+                drumCtx.stroke();
+
+                // Drum Head (Top Surface)
+                drumCtx.beginPath();
+                drumCtx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+                
+                const headGrad = drumCtx.createRadialGradient(x, y, 5, x, y, rx);
+                if (isHit) {
+                    headGrad.addColorStop(0, '#ffffff');
+                    headGrad.addColorStop(0.8, part.color);
+                    headGrad.addColorStop(1, '#ffffff');
+                } else {
+                    headGrad.addColorStop(0, '#eeeeee');
+                    headGrad.addColorStop(0.75, '#cccccc');
+                    headGrad.addColorStop(1, '#888888');
+                }
+                drumCtx.fillStyle = headGrad;
+                drumCtx.fill();
+                
+                // Metallic Rim
+                drumCtx.strokeStyle = isHit ? '#fff' : '#aaaaaa';
+                drumCtx.lineWidth = isHit ? 4 : 3;
+                drumCtx.stroke();
+
+            } else if (part.type === 'cymbal') {
+                // Draw Stand Rod
+                drumCtx.strokeStyle = '#555';
+                drumCtx.lineWidth = 4;
+                drumCtx.beginPath();
+                drumCtx.moveTo(x, y);
+                drumCtx.lineTo(x, y + 120);
+                drumCtx.stroke();
+
+                // 3D Cymbal Body
+                drumCtx.beginPath();
+                drumCtx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+                
+                const cymbalGrad = drumCtx.createRadialGradient(x, y, 2, x, y, rx);
+                if (isHit) {
+                    cymbalGrad.addColorStop(0, '#ffffff');
+                    cymbalGrad.addColorStop(0.5, '#fff176');
+                    cymbalGrad.addColorStop(1, part.color);
+                } else {
+                    cymbalGrad.addColorStop(0, '#ffe082');
+                    cymbalGrad.addColorStop(0.6, '#ffb300');
+                    cymbalGrad.addColorStop(1, '#ff6f00');
+                }
+                drumCtx.fillStyle = cymbalGrad;
+                drumCtx.fill();
+                drumCtx.strokeStyle = isHit ? '#ffffff' : '#ffd54f';
+                drumCtx.lineWidth = 2;
+                drumCtx.stroke();
+
+                // Cymbal Bell (Center Top)
+                drumCtx.beginPath();
+                drumCtx.ellipse(x, y, rx * 0.2, ry * 0.2, 0, 0, Math.PI * 2);
+                drumCtx.fillStyle = '#fff8e1';
+                drumCtx.fill();
+            }
+
+            // Glow Effect on Hit
+            if (isHit) {
+                drumCtx.shadowColor = part.color;
+                drumCtx.shadowBlur = 25;
+                drumCtx.stroke();
+            }
+
+            // Text Label
+            drumCtx.shadowBlur = 0;
+            drumCtx.fillStyle = isHit ? '#000' : '#111';
+            drumCtx.font = 'bold 12px sans-serif';
+            drumCtx.textAlign = 'center';
+            drumCtx.textBaseline = 'middle';
+            drumCtx.fillText(part.label, x, y);
+
+            drumCtx.restore();
+        }
+
+        function drawDrumKit() {
+            drumCtx.clearRect(0, 0, drumCanvas.width, drumCanvas.height);
+            
+            // Render back to front for proper 3D depth layering
+            draw3DDrum('ride', drumParts3D.ride);
+            draw3DDrum('hiTom', drumParts3D.hiTom);
+            draw3DDrum('lowTom', drumParts3D.lowTom);
+            draw3DDrum('kick', drumParts3D.kick);
+            draw3DDrum('hihat', drumParts3D.hihat);
+            draw3DDrum('snare', drumParts3D.snare);
+        }
+
+        function drawStaffNotation() {
+            staffCtx.clearRect(0, 0, staffCanvas.width, staffCanvas.height);
+            
+            const startX = 60;
+            const startY = 40;
+            const lineSpacing = 12;
+            const measureWidth = 720;
+            const stepWidth = measureWidth / 16;
+            
+            // Draw Beat Numbers
+            const beatLabels = ['1','e','&','a', '2','e','&','a', '3','e','&','a', '4','e','&','a'];
+            staffCtx.font = '11px sans-serif';
+            staffCtx.textAlign = 'center';
+            for (let i = 0; i < 16; i++) {
+                const bx = startX + (i * stepWidth) + (stepWidth / 2);
+                staffCtx.fillStyle = (i % 4 === 0) ? '#ff9800' : '#777';
+                staffCtx.fillText(beatLabels[i], bx, startY - 12);
+            }
+
+            // Draw 5 Staff Lines
+            staffCtx.strokeStyle = '#555';
+            staffCtx.lineWidth = 1.5;
+            for (let i = 0; i < 5; i++) {
+                const y = startY + (i * lineSpacing);
+                staffCtx.beginPath();
+                staffCtx.moveTo(startX, y);
+                staffCtx.lineTo(startX + measureWidth, y);
+                staffCtx.stroke();
+            }
+
+            // Draw Clef & Bar lines
+            staffCtx.fillStyle = '#aaa';
+            staffCtx.font = 'bold 20px sans-serif';
+            staffCtx.fillText('🥁', startX - 35, startY + 28);
+            
+            staffCtx.strokeStyle = '#777';
+            staffCtx.lineWidth = 2;
+            staffCtx.beginPath();
+            staffCtx.moveTo(startX, startY);
+            staffCtx.lineTo(startX, startY + (4 * lineSpacing));
+            staffCtx.moveTo(startX + measureWidth, startY);
+            staffCtx.lineTo(startX + measureWidth, startY + (4 * lineSpacing));
+            staffCtx.stroke();
+
+            // Playhead Cursor
+            if (isPlaying) {
+                const headX = startX + (currentStep * stepWidth) + (stepWidth / 2);
+                staffCtx.fillStyle = 'rgba(255, 152, 0, 0.25)';
+                staffCtx.fillRect(headX - (stepWidth/2), startY - 5, stepWidth, (4 * lineSpacing) + 10);
+                
+                staffCtx.strokeStyle = '#ff9800';
+                staffCtx.lineWidth = 2;
+                staffCtx.beginPath();
+                staffCtx.moveTo(headX, startY - 5);
+                staffCtx.lineTo(headX, startY + (4 * lineSpacing) + 5);
+                staffCtx.stroke();
+            }
+
+            // Render Notes
+            const genre = document.getElementById('genre-select').value;
+            const pat = patterns[genre];
+
+            for (let i = 0; i < 16; i++) {
+                const noteX = startX + (i * stepWidth) + (stepWidth / 2);
+                const isActiveStep = (i === currentStep && isPlaying);
+
+                if ((pat.h && pat.h[i]) || (pat.o && pat.o[i])) {
+                    drawXNote(noteX, startY - (lineSpacing / 2), '#00e676', isActiveStep);
+                }
+                if (pat.r && pat.r[i]) {
+                    drawXNote(noteX, startY - (lineSpacing / 2), '#ffd700', isActiveStep);
+                }
+                if (pat.s && pat.s[i]) {
+                    drawOvalNote(noteX, startY + (1.5 * lineSpacing), '#ff3d00', isActiveStep, true);
+                }
+                if (pat.k && pat.k[i]) {
+                    drawOvalNote(noteX, startY + (4.5 * lineSpacing), '#29b6f6', isActiveStep, false);
+                }
+            }
+        }
+
+        function drawXNote(x, y, color, highlight) {
+            staffCtx.strokeStyle = highlight ? '#ffffff' : color;
+            staffCtx.lineWidth = highlight ? 3 : 2;
+            const size = 5;
+            staffCtx.beginPath();
+            staffCtx.moveTo(x - size, y - size); staffCtx.lineTo(x + size, y + size);
+            staffCtx.moveTo(x + size, y - size); staffCtx.lineTo(x - size, y + size);
+            staffCtx.stroke();
+        }
+
+        function drawOvalNote(x, y, color, highlight, stemUp) {
+            staffCtx.fillStyle = highlight ? '#ffffff' : color;
+            staffCtx.beginPath();
+            staffCtx.ellipse(x, y, 6, 4, -Math.PI / 6, 0, Math.PI * 2);
+            staffCtx.fill();
+
+            staffCtx.strokeStyle = highlight ? '#ffffff' : color;
+            staffCtx.lineWidth = 1.5;
+            staffCtx.beginPath();
+            if (stemUp) {
+                staffCtx.moveTo(x + 5, y);
+                staffCtx.lineTo(x + 5, y - 25);
+            } else {
+                staffCtx.moveTo(x - 5, y);
+                staffCtx.lineTo(x - 5, y + 25);
+            }
+            staffCtx.stroke();
+        }
+
+        // --- Render Loop ---
+        function render() {
+            drawDrumKit();
+            drawStaffNotation();
+            requestAnimationFrame(render);
+        }
+        render();
+
+        // --- Mouse Interaction on 3D Drum Canvas ---
+        drumCanvas.addEventListener('mousedown', (e) => {
+            const rect = drumCanvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+
+            // Check front to back for click collision
+            const clickOrder = ['snare', 'hihat', 'kick', 'lowTom', 'hiTom', 'ride'];
+            for (let key of clickOrder) {
+                const part = drumParts3D[key];
+                // Elliptical hit test
+                const dx = (clickX - part.x) / part.rx;
+                const dy = (clickY - part.y) / (part.ry + part.depth/2);
+                if ((dx * dx + dy * dy) <= 1.0) {
+                    if (key === 'kick') playKick();
+                    else if (key === 'snare') playSnare();
+                    else if (key === 'hihat') playHiHat();
+                    else if (key === 'ride') playRide();
+                    else if (key === 'hiTom') playTom(150);
+                    else if (key === 'lowTom') playTom(90);
+                    break;
+                }
+            }
+        });
+
+        // --- Keyboard Shortcuts ---
+        window.addEventListener('keydown', (e) => {
+            if (e.repeat) return;
+            const key = e.key.toLowerCase();
+            if (key === 'a' || key === ' ') { e.preventDefault(); playKick(); }
+            else if (key === 's') playSnare();
+            else if (key === 'k') playHiHat();
+            else if (key === 'r') playRide();
+            else if (key === 'j') playTom(150);
+            else if (key === 'l') playTom(90);
+        });
+
+        // --- Mixer Controls Binding ---
+        function bindMixerChannel(partKey, sliderId, muteBtnId) {
+            const slider = document.getElementById(sliderId);
+            const muteBtn = document.getElementById(muteBtnId);
+
+            slider.addEventListener('input', (e) => {
+                mixer[partKey].vol = parseFloat(e.target.value);
+            });
+
+            muteBtn.addEventListener('click', () => {
+                mixer[partKey].mute = !mixer[partKey].mute;
+                muteBtn.classList.toggle('muted', mixer[partKey].mute);
+                muteBtn.innerText = mixer[partKey].mute ? 'Muted' : 'Mute';
+            });
+        }
+
+        bindMixerChannel('hihat', 'vol-hihat', 'mute-hihat');
+        bindMixerChannel('ride',  'vol-ride',  'mute-ride');
+        bindMixerChannel('snare', 'vol-snare', 'mute-snare');
+        bindMixerChannel('kick',  'vol-kick',  'mute-kick');
+        bindMixerChannel('toms',  'vol-toms',  'mute-toms');
+
+        // --- Event Controls ---
+        const btnPlay = document.getElementById('btn-play');
+        const btnStop = document.getElementById('btn-stop');
+        const genreSelect = document.getElementById('genre-select');
+        const bpmInput = document.getElementById('bpm-input');
+        const genreInfo = document.getElementById('genre-info');
+
+        genreSelect.addEventListener('change', (e) => {
+            const selectedPattern = patterns[e.target.value];
+            if (selectedPattern) {
+                bpmInput.value = selectedPattern.defaultBpm;
+                genreInfo.innerHTML = selectedPattern.info;
+            }
+        });
+
+        btnPlay.addEventListener('click', () => {
+            const ctx = getAudioContext();
+            isPlaying = true;
+            currentStep = 0;
+            nextNoteTime = ctx.currentTime;
+            scheduler();
+            
+            btnPlay.disabled = true;
+            btnStop.disabled = false;
+        });
+
+        btnStop.addEventListener('click', () => {
+            isPlaying = false;
+            clearTimeout(timerId);
+            
+            btnPlay.disabled = false;
+            btnStop.disabled = true;
+        });
+    </script>
+</body>
+</html>
