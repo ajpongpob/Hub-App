@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แบบฝึกหัดทายขั้นคู่เสียง (Interval Ear Training)</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Sarabun', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 16px;
+        }
+
+        .container {
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            max-width: 720px;
+            width: 100%;
+            padding: 28px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 6px;
+            color: #0f172a;
+        }
+
+        .score-board {
+            font-size: 0.95rem;
+            color: #64748b;
+            margin-bottom: 20px;
+        }
+
+        .control-panel {
+            margin-bottom: 20px;
+        }
+
+        .btn-play {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-play:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        /* ตารางตัวเลือก 12 ข้อ จัดแถวละ 4 หรือ 3 ปุ่มตามขนาดจอ */
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .options-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .option-btn {
+            background-color: #f1f5f9;
+            border: 2px solid #e2e8f0;
+            color: #334155;
+            padding: 10px 6px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+        }
+
+        .option-btn small {
+            font-size: 0.75rem;
+            font-weight: 400;
+            color: #64748b;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background-color: #e2e8f0;
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+        }
+
+        .option-btn.correct {
+            background-color: #dcfce7 !important;
+            border-color: var(--success) !important;
+            color: var(--success) !important;
+        }
+
+        .option-btn.wrong {
+            background-color: #fee2e2 !important;
+            border-color: var(--danger) !important;
+            color: var(--danger) !important;
+        }
+
+        .option-btn:disabled {
+            cursor: default;
+        }
+
+        .feedback-box {
+            min-height: 40px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .btn-next {
+            background-color: #0f172a;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 14px;
+            transition: background 0.2s;
+        }
+
+        .btn-next:hover {
+            background-color: #334155;
+        }
+
+        /* Keyboard Piano Styling */
+        .piano-wrapper {
+            margin-top: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .piano {
+            position: relative;
+            display: flex;
+            height: 140px;
+            user-select: none;
+            padding: 4px;
+            background: #1e293b;
+            border-radius: 8px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+            overflow-x: auto;
+            max-width: 100%;
+        }
+
+        .key {
+            position: relative;
+            border-radius: 0 0 4px 4px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 8px;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+
+        .white-key {
+            width: 36px;
+            height: 100%;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-top: none;
+            z-index: 1;
+            color: #64748b;
+        }
+
+        .black-key {
+            width: 22px;
+            height: 60%;
+            background: #0f172a;
+            margin-left: -11px;
+            margin-right: -11px;
+            z-index: 2;
+            color: #94a3b8;
+        }
+
+        /* Note Highlight Colors */
+        .key.highlight-root {
+            background: #38bdf8 !important; /* ฟ้า: โน้ตตัวแรก */
+            color: white !important;
+        }
+        .key.highlight-target {
+            background: #ec4899 !important; /* ชมพู: โน้ตตัวที่สอง */
+            color: white !important;
+        }
+
+        .legend {
+            display: flex;
+            gap: 16px;
+            margin-top: 12px;
+            font-size: 0.85rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>แบบฝึกหัดทายขั้นคู่เสียง (Intervals)</h1>
+    <div class="score-board">
+        ข้อที่ตอบ: <span id="total-count">0</span> | ถูกต้อง: <span id="correct-count">0</span>
+    </div>
+
+    <div class="control-panel">
+        <button class="btn-play" id="btn-play" onclick="playCurrentInterval()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            ฟังสัญญาณเสียงซ้ำ
+        </button>
+    </div>
+
+    <!-- ปุ่มตัวเลือกทั้งหมด 12 ตัวเลือก -->
+    <div class="options-grid" id="options-container"></div>
+
+    <div class="feedback-box" id="feedback"></div>
+
+    <!-- ส่วนแสดงลิ่มเปียโน -->
+    <div class="piano-wrapper" id="piano-section" style="display: none;">
+        <div class="piano" id="piano"></div>
+        <div class="legend">
+            <div class="legend-item"><div class="dot" style="background: #38bdf8;"></div> โน้ตตัวแรก (Root)</div>
+            <div class="legend-item"><div class="dot" style="background: #ec4899;"></div> โน้ตตัวที่สอง (Target)</div>
+        </div>
+        <button class="btn-next" id="btn-next" onclick="generateQuestion()">ข้อถัดไป ➔</button>
+    </div>
+</div>
+
+<script>
+    // นิยามข้อมูลขั้นคู่ 12 อัน ตามที่ระบุ
+    const INTERVALS = [
+        { code: "m2", semitones: 1, th: "คู่ 2 ไมเนอร์" },
+        { code: "M2", semitones: 2, th: "คู่ 2 เมเจอร์" },
+        { code: "m3", semitones: 3, th: "คู่ 3 ไมเนอร์" },
+        { code: "M3", semitones: 4, th: "คู่ 3 เมเจอร์" },
+        { code: "P4", semitones: 5, th: "คู่ 4 เพอร์เฟกต์" },
+        { code: "A4", semitones: 6, th: "คู่ 4 ออกเมนต์ (Tritone)" },
+        { code: "P5", semitones: 7, th: "คู่ 5 เพอร์เฟกต์" },
+        { code: "m6", semitones: 8, th: "คู่ 6 ไมเนอร์" },
+        { code: "M6", semitones: 9, th: "คู่ 6 เมเจอร์" },
+        { code: "m7", semitones: 10, th: "คู่ 7 ไมเนอร์" },
+        { code: "M7", semitones: 11, th: "คู่ 7 เมเจอร์" },
+        { code: "P8", semitones: 12, th: "คู่ 8 เพอร์เฟกต์" }
+    ];
+
+    // โครงสร้างลิ่มเปียโน 2 Octave: C4 (MIDI 60) ถึง C6 (MIDI 84)
+    const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    const START_MIDI = 60; // C4
+    const END_MIDI = 84;   // C6
+
+    let audioCtx = null;
+    let currentRootMidi = 0;
+    let currentTargetMidi = 0;
+    let currentInterval = null;
+    let hasAnswered = false;
+    let totalScore = 0;
+    let totalAttempts = 0;
+
+    // Web Audio API
+    function getAudioContext() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        return audioCtx;
+    }
+
+    function midiToFreq(midi) {
+        return 440 * Math.pow(2, (midi - 69) / 12);
+    }
+
+    function playTone(freq, startTime, duration) {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'triangle'; // เสียงฟังสบาย
+        osc.frequency.setValueAtTime(freq, startTime);
+
+        // Fade in & Fade out เพื่อเสียงที่นุ่มนวล
+        gain.gain.setValueAtTime(0.001, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.3, startTime + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+    }
+
+    function playCurrentInterval() {
+        const ctx = getAudioContext();
+        const now = ctx.currentTime;
+        const noteDuration = 0.55;
+        const noteGap = 0.6;
+
+        // เล่นโน้ตตัวแรก แล้วตามด้วยตัวที่สอง
+        playTone(midiToFreq(currentRootMidi), now, noteDuration);
+        playTone(midiToFreq(currentTargetMidi), now + noteGap, noteDuration);
+    }
+
+    // วาดคีย์บอร์ดเปียโน
+    function createPianoKeys() {
+        const piano = document.getElementById("piano");
+        piano.innerHTML = "";
+
+        for (let midi = START_MIDI; midi <= END_MIDI; midi++) {
+            const noteIndex = midi % 12;
+            const isBlack = [1, 3, 6, 8, 10].includes(noteIndex);
+            
+            const key = document.createElement("div");
+            key.className = `key ${isBlack ? 'black-key' : 'white-key'}`;
+            key.id = `key-${midi}`;
+            
+            const label = document.createElement("span");
+            label.innerText = NOTE_NAMES[noteIndex] + Math.floor(midi / 12 - 1);
+            key.appendChild(label);
+
+            piano.appendChild(key);
+        }
+    }
+
+    // แสดงปุ่มชอยส์ทั้งหมด 12 ปุ่ม
+    function renderOptionButtons() {
+        const container = document.getElementById("options-container");
+        container.innerHTML = "";
+
+        INTERVALS.forEach(opt => {
+            const btn = document.createElement("button");
+            btn.className = "option-btn";
+            btn.id = `opt-btn-${opt.code}`;
+            btn.innerHTML = `${opt.code}<small>${opt.th}</small>`;
+            btn.onclick = () => checkAnswer(opt, btn);
+            container.appendChild(btn);
+        });
+    }
+
+    // สร้างคำถามข้อใหม่
+    function generateQuestion() {
+        hasAnswered = false;
+        document.getElementById("feedback").innerText = "";
+        document.getElementById("piano-section").style.display = "none";
+        
+        // ล้างสถานะปุ่มตัวเลือก
+        document.querySelectorAll(".option-btn").forEach(btn => {
+            btn.className = "option-btn";
+            btn.disabled = false;
+        });
+
+        // ล้างสีไฮไลต์บนคีย์บอร์ด
+        document.querySelectorAll(".key").forEach(k => {
+            k.classList.remove("highlight-root", "highlight-target");
+        });
+
+        // สุ่ม 1 ใน 12 ขั้นคู่
+        currentInterval = INTERVALS[Math.floor(Math.random() * INTERVALS.length)];
+        
+        // สุ่มโน้ตตัวแรก (C4 - B4) เพื่อไม่ให้โน้ตตัวที่สองล้นแป้น C6
+        currentRootMidi = START_MIDI + Math.floor(Math.random() * 12);
+        currentTargetMidi = currentRootMidi + currentInterval.semitones;
+
+        // เล่นเสียงอัตโนมัติ
+        setTimeout(() => {
+            playCurrentInterval();
+        }, 150);
+    }
+
+    function checkAnswer(selectedOption, clickedBtn) {
+        if (hasAnswered) return;
+        hasAnswered = true;
+        totalAttempts++;
+
+        const isCorrect = selectedOption.code === currentInterval.code;
+        const feedback = document.getElementById("feedback");
+
+        // ล็อกทุกปุ่ม และเฉลยปุ่มที่ถูกต้องด้วยสีเขียว
+        document.querySelectorAll(".option-btn").forEach(btn => {
+            btn.disabled = true;
+        });
+        const correctBtn = document.getElementById(`opt-btn-${currentInterval.code}`);
+        if (correctBtn) correctBtn.classList.add("correct");
+
+        if (isCorrect) {
+            totalScore++;
+            feedback.style.color = "var(--success)";
+            feedback.innerText = `🎉 ถูกต้อง! (${currentInterval.code} - ${currentInterval.th})`;
+        } else {
+            clickedBtn.classList.add("wrong");
+            feedback.style.color = "var(--danger)";
+            feedback.innerText = `❌ ยังไม่ถูก (คำตอบที่ถูกคือ: ${currentInterval.code} - ${currentInterval.th})`;
+        }
+
+        // อัปเดตคะแนน
+        document.getElementById("correct-count").innerText = totalScore;
+        document.getElementById("total-count").innerText = totalAttempts;
+
+        // แสดงเปียโนและไฮไลต์โน้ต
+        renderPianoHighlight();
+    }
+
+    function renderPianoHighlight() {
+        document.getElementById("piano-section").style.display = "flex";
+
+        const rootKey = document.getElementById(`key-${currentRootMidi}`);
+        const targetKey = document.getElementById(`key-${currentTargetMidi}`);
+
+        if (rootKey) rootKey.classList.add("highlight-root");
+        if (targetKey) targetKey.classList.add("highlight-target");
+    }
+
+    // เริ่มต้นแอป
+    window.onload = () => {
+        createPianoKeys();
+        renderOptionButtons();
+        generateQuestion();
+    };
+</script>
+
+</body>
+</html>
