@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Chord Builder — ห้องทดลองสร้างคอร์ด</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@400;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f1ead9;
+    --paper-line:#d9cdae;
+    --ink:#232323ff;
+    --ink-soft:#5a5346;
+    --navy:#26324a;
+    --teal:#2f5d50;
+    --teal-dark:#1f4038;
+    --ochre:#b9812c;
+    --ochre-soft:#e7cd9c;
+    --white-key:#fbf8f1;
+    --white-key-edge:#cdbf9e;
+    --black-key:#2a2622;
+    --wrong:#a53d3d;
+    --card-shadow: 0 2px 0 rgba(35,35,35,0.08);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      repeating-linear-gradient(180deg, transparent 0 41px, var(--paper-line) 41px 42px),
+      var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans Thai','IBM Plex Sans',sans-serif;
+    min-height:100vh;
+    padding:28px 16px 80px;
+  }
+  .wrap{
+    max-width:760px;
+    margin:0 auto;
+  }
+  header{
+    margin-bottom:28px;
+  }
+  .eyebrow-free-title{
+    font-family:'Noto Serif Thai', serif;
+    font-weight:700;
+    font-size:clamp(28px,5vw,40px);
+    color:var(--navy);
+    margin:0 0 6px;
+    letter-spacing:0.2px;
+  }
+  header p{
+    margin:0;
+    color:var(--ink-soft);
+    font-size:15.5px;
+    line-height:1.65;
+    max-width:60ch;
+  }
+  .mode-tabs{
+    display:flex;
+    gap:8px;
+    margin:26px 0 18px;
+    border-bottom:1.5px solid var(--paper-line);
+  }
+  .mode-tab{
+    font-family:'IBM Plex Sans Thai',sans-serif;
+    font-weight:600;
+    font-size:15px;
+    background:none;
+    border:none;
+    padding:10px 6px 12px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    position:relative;
+    border-bottom:3px solid transparent;
+    transition:color .15s;
+  }
+  .mode-tab.active{ color:var(--navy); border-bottom-color:var(--teal); }
+  .mode-tab:hover{ color:var(--navy); }
+
+  section.panel{ display:none; }
+  section.panel.active{ display:block; }
+
+  /* ---- Piano ---- */
+  .piano-wrap{
+    background:var(--navy);
+    border-radius:14px;
+    padding:22px 18px 18px;
+    box-shadow: 0 10px 24px rgba(38,50,74,0.22);
+    overflow-x:auto;
+  }
+  .piano{
+    position:relative;
+    height:172px;
+    width:420px;
+    max-width:100%;
+    margin:0 auto;
+    user-select:none;
+  }
+  .wkey{
+    position:absolute;
+    top:0;
+    width:60px;
+    height:172px;
+    background:var(--white-key);
+    border:1px solid var(--white-key-edge);
+    border-radius:0 0 7px 7px;
+    cursor:pointer;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    padding-bottom:10px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    transition:background .1s;
+  }
+  .wkey:hover{ background:#f1ebdd; }
+  .wkey.selected{ background:var(--ochre-soft); color:var(--navy); font-weight:600;}
+  .wkey.root-selected{ background:var(--ochre); color:#fff; font-weight:700; }
+  .bkey{
+    position:absolute;
+    top:0;
+    width:34px;
+    height:104px;
+    background:var(--black-key);
+    border-radius:0 0 6px 6px;
+    cursor:pointer;
+    z-index:2;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    padding-bottom:8px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    color:#cfcac0;
+    transition:background .1s;
+  }
+  .bkey:hover{ background:#3a352e; }
+  .bkey.selected{ background:var(--teal); color:#fff; }
+  .bkey.root-selected{ background:var(--ochre); color:#fff; font-weight:700; }
+  .order-badge{
+    position:absolute;
+    top:6px;
+    left:50%;
+    transform:translateX(-50%);
+    width:17px;height:17px;
+    border-radius:50%;
+    background:var(--navy);
+    color:#fff;
+    font-size:10px;
+    font-family:'IBM Plex Mono',monospace;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .bkey .order-badge{ background:#fff; color:var(--navy); }
+
+  /* ---- controls row ---- */
+  .controls-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    margin:16px 0 22px;
+  }
+  .chips{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    flex:1;
+    min-height:34px;
+  }
+  .chip{
+    background:#fff;
+    border:1.5px solid var(--paper-line);
+    padding:5px 11px;
+    border-radius:20px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    color:var(--navy);
+  }
+  .chip.root{ border-color:var(--ochre); background:var(--ochre-soft); font-weight:600; }
+  .btn{
+    font-family:'IBM Plex Sans Thai',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    border-radius:8px;
+    padding:10px 16px;
+    border:1.5px solid transparent;
+    cursor:pointer;
+    transition:transform .08s, background .15s;
+    white-space:nowrap;
+  }
+  .btn:active{ transform:scale(0.97); }
+  .btn-primary{ background:var(--teal); color:#fff; }
+  .btn-primary:hover{ background:var(--teal-dark); }
+  .btn-ghost{ background:transparent; border-color:var(--paper-line); color:var(--ink-soft); }
+  .btn-ghost:hover{ border-color:var(--ink-soft); color:var(--ink); }
+  .btn:disabled{ opacity:0.4; cursor:not-allowed; }
+
+  /* ---- result card ---- */
+  .result-card{
+    background:#fff;
+    border-radius:14px;
+    padding:26px 26px 22px;
+    box-shadow:var(--card-shadow);
+    border:1px solid var(--paper-line);
+    min-height:120px;
+  }
+  .result-empty{ color:var(--ink-soft); font-size:15px; line-height:1.7; }
+  .chord-symbol{
+    font-family:'Noto Serif Thai',serif;
+    font-weight:700;
+    font-size:clamp(30px,6vw,44px);
+    color:var(--navy);
+    line-height:1.1;
+    margin:0 0 2px;
+  }
+  .chord-fullname{
+    color:var(--ink-soft);
+    font-size:15px;
+    margin:0 0 18px;
+  }
+  .tone-list{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:6px;
+  }
+  .tone-item{
+    background:var(--paper);
+    border:1px solid var(--paper-line);
+    border-radius:9px;
+    padding:8px 12px;
+    min-width:96px;
+  }
+  .tone-item .tn{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:16px;
+    color:var(--navy);
+  }
+  .tone-item .td{
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:2px;
+  }
+  .alt-block{
+    margin-top:18px;
+    padding-top:14px;
+    border-top:1px dashed var(--paper-line);
+    font-size:13.5px;
+    color:var(--ink-soft);
+    line-height:1.8;
+  }
+  .alt-block b{ color:var(--navy); }
+  .no-match{
+    color:var(--wrong);
+    font-weight:600;
+  }
+
+  /* ---- challenge mode ---- */
+  .challenge-target{
+    background:var(--navy);
+    color:#fff;
+    border-radius:14px;
+    padding:22px 24px;
+    margin-bottom:18px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+  .challenge-target .label{ font-size:13px; opacity:0.75; margin-bottom:4px;}
+  .challenge-target .target-name{
+    font-family:'Noto Serif Thai',serif;
+    font-weight:700;
+    font-size:clamp(24px,5vw,32px);
+  }
+  select.diff{
+    font-family:'IBM Plex Sans Thai',sans-serif;
+    font-size:13px;
+    padding:8px 10px;
+    border-radius:8px;
+    border:1.5px solid rgba(255,255,255,0.35);
+    background:rgba(255,255,255,0.08);
+    color:#fff;
+  }
+  .feedback{
+    margin-top:14px;
+    padding:14px 16px;
+    border-radius:10px;
+    font-size:14.5px;
+    font-weight:600;
+    display:none;
+  }
+  .feedback.correct{ background:#dff0e6; color:var(--teal-dark); display:block; }
+  .feedback.wrong{ background:#f6e2e0; color:var(--wrong); display:block; }
+
+  .howitworks{
+    margin-top:30px;
+    font-size:13px;
+    color:var(--ink-soft);
+    line-height:1.8;
+    border-top:1px solid var(--paper-line);
+    padding-top:16px;
+  }
+  .howitworks summary{ cursor:pointer; font-weight:600; color:var(--navy); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 class="eyebrow-free-title">Chord Builder</h1>
+    <p>ห้องทดลองสร้างคอร์ด — แตะคีย์เปียโนเพื่อเลือกโน้ต ระบบจะวิเคราะห์ตามทฤษฎีดนตรีจริงว่าโน้ตที่เลือกประกอบกันเป็นคอร์ดอะไร พร้อมฟังเสียงคอร์ดที่สร้างขึ้นได้ทันที</p>
+  </header>
+
+  <div class="mode-tabs">
+    <button class="mode-tab active" data-mode="free">🎹 โหมดอิสระ</button>
+    <button class="mode-tab" data-mode="challenge">🎯 โหมดท้าทาย</button>
+  </div>
+
+  <!-- shared piano -->
+  <div class="piano-wrap">
+    <div class="piano" id="piano"></div>
+  </div>
+
+  <div class="controls-row">
+    <div class="chips" id="chips"></div>
+    <button class="btn btn-primary" id="playBtn">▶ เล่นเสียง</button>
+    <button class="btn btn-ghost" id="resetBtn">ล้างโน้ต</button>
+  </div>
+
+  <!-- FREE MODE -->
+  <section class="panel active" id="panel-free">
+    <div class="result-card" id="resultCard">
+      <p class="result-empty">แตะคีย์เปียโนด้านบนเพื่อเริ่มสร้างคอร์ด โน้ตตัวแรกที่แตะจะถูกใช้เป็น "ราก" (Root) ของคอร์ด</p>
+    </div>
+
+    <details class="howitworks">
+      <summary>ระบบนี้วิเคราะห์คอร์ดอย่างไร</summary>
+      <p style="margin-top:10px">
+      ระบบจะยึดโน้ตตัวแรกที่คุณแตะเป็นรากของคอร์ด แล้วเทียบช่วงเสียง (interval) ของโน้ตที่เหลือกับรากนั้น ตามสูตรคอร์ดมาตรฐานในทฤษฎีดนตรีสากล (ไตรแอด, เซเว่นธ์คอร์ด, ซัสคอร์ด, ไปจนถึงคอร์ดขยายอย่าง 9/11/13) หากชุดโน้ตที่เลือกตรงกับสูตรพอดี ระบบจะแสดงชื่อคอร์ดพร้อมอธิบายหน้าที่ของแต่ละโน้ต และหากโน้ตชุดเดียวกันสามารถตีความเป็นคอร์ดอื่นได้เมื่อมองจากรากตัวอื่น (เช่น C6 กับ Am7 ใช้โน้ตชุดเดียวกัน) ระบบจะแสดงไว้เป็น "การตีความอื่น" ด้วย<br><br>
+      หมายเหตุ: ระบบพิจารณาเฉพาะ <i>ชุดโน้ต</i> (pitch class) ไม่นับ octave หรือการกลับข้าง (inversion) ของคอร์ด และเลือกตัวสะกดโน้ต (เช่น C♯ หรือ D♭) ตามธรรมเนียมวงกลมคู่ห้า (circle of fifths) ของคอร์ดเมเจอร์/ไมเนอร์แต่ละราก
+      </p>
+    </details>
+  </section>
+
+  <!-- CHALLENGE MODE -->
+  <section class="panel" id="panel-challenge">
+    <div class="challenge-target">
+      <div>
+        <div class="label">ลองสร้างคอร์ดนี้บนเปียโน:</div>
+        <div class="target-name" id="targetName">—</div>
+      </div>
+      <select class="diff" id="diffSelect">
+        <option value="easy">ระดับเริ่มต้น (ไตรแอด)</option>
+        <option value="mid" selected>ระดับกลาง (7th)</option>
+        <option value="hard">ระดับสูง (9/11/13 และคอร์ดแปลก)</option>
+      </select>
+    </div>
+    <div class="controls-row" style="margin-top:0">
+      <button class="btn btn-primary" id="checkBtn">✔ ตรวจคำตอบ</button>
+      <button class="btn btn-ghost" id="revealBtn">แสดงเฉลย</button>
+      <button class="btn btn-ghost" id="nextBtn">🎲 สุ่มคอร์ดใหม่</button>
+    </div>
+    <div class="feedback" id="feedback"></div>
+  </section>
+
+</div>
+
+<script>
+/* ============================= MUSIC THEORY ENGINE ============================= */
+const NOTE_LETTERS = ['C','D','E','F','G','A','B'];
+const LETTER_NATURAL = [0,2,4,5,7,9,11]; // semitone of each natural letter
+const MAJOR_ROOT_SPELL = [
+  {l:0,a:0},{l:1,a:-1},{l:1,a:0},{l:2,a:-1},{l:2,a:0},{l:3,a:0},
+  {l:3,a:1},{l:4,a:0},{l:5,a:-1},{l:5,a:0},{l:6,a:-1},{l:6,a:0}
+]; // C Db D Eb E F F# G Ab A Bb B
+const MINOR_ROOT_SPELL = [
+  {l:0,a:0},{l:0,a:1},{l:1,a:0},{l:2,a:-1},{l:2,a:0},{l:3,a:0},
+  {l:3,a:1},{l:4,a:0},{l:4,a:1},{l:5,a:0},{l:6,a:-1},{l:6,a:0}
+]; // C C# D Eb E F F# G G# A Bb B
+
+function accSym(a){
+  if(a<=-2) return '𝄫';
+  if(a===-1) return '♭';
+  if(a===0) return '';
+  if(a===1) return '♯';
+  return '𝄪';
+}
+function spellNote(letterIdx, acc){
+  return NOTE_LETTERS[((letterIdx%7)+7)%7] + accSym(acc);
+}
+function rootSpelling(pc, family){
+  const table = family==='minor' ? MINOR_ROOT_SPELL : MAJOR_ROOT_SPELL;
+  return table[((pc%12)+12)%12];
+}
+function chordToneName(rootPc, rootSpell, degree, semitone){
+  const targetPc = ((rootPc+semitone)%12+12)%12;
+  const letterIdx = ((rootSpell.l + (degree-1))%7+7)%7;
+  const natural = LETTER_NATURAL[letterIdx];
+  let diff = targetPc - natural;
+  if(diff>6) diff-=12;
+  if(diff<-6) diff+=12;
+  return {name: spellNote(letterIdx,diff), acc:diff, letterIdx};
+}
+
+// Formula dictionary. notes: [{d: scale degree, s: semitone offset from root (0-11)}]
+const FORMULAS = [
+  {symbol:'5',        thName:'พาวเวอร์คอร์ด',        family:'major', notes:[{d:1,s:0},{d:5,s:7}]},
+  {symbol:'',          thName:'เมเจอร์',              family:'major', notes:[{d:1,s:0},{d:3,s:4},{d:5,s:7}]},
+  {symbol:'m',         thName:'ไมเนอร์',              family:'minor', notes:[{d:1,s:0},{d:3,s:3},{d:5,s:7}]},
+  {symbol:'dim',       thName:'ดิมินิชด์',            family:'minor', notes:[{d:1,s:0},{d:3,s:3},{d:5,s:6}]},
+  {symbol:'aug',       thName:'ออกเมนเต็ด',           family:'major', notes:[{d:1,s:0},{d:3,s:4},{d:5,s:8}]},
+  {symbol:'sus2',      thName:'ซัสสอง',               family:'major', notes:[{d:1,s:0},{d:2,s:2},{d:5,s:7}]},
+  {symbol:'sus4',      thName:'ซัสโฟร์',              family:'major', notes:[{d:1,s:0},{d:4,s:5},{d:5,s:7}]},
+  {symbol:'6',         thName:'เมเจอร์ซิกซ์',         family:'major', notes:[{d:1,s:0},{d:3,s:4},{d:5,s:7},{d:6,s:9}]},
+  {symbol:'m6',        thName:'ไมเนอร์ซิกซ์',         family:'minor', notes:[{d:1,s:0},{d:3,s:3},{d:5,s:7},{d:6,s:9}]},
+  {symbol:'7',         thName:'โดมินันต์เซเว่น',      family:'major', notes:[{d:1,s:0},{d:3,s:4},{d:5,s:7},{d:7,s:10}]},
+  {symbol:'maj7',      thName:'เมเจอร์เซเว่น',        family:'major', notes:[{d:1,s:0},{d:3,s:4},{d:5,s:7},{d:7,s:11}]},
+  {symbol:'m7',        thName:'ไมเนอร์เซเว่น',        family:'minor', notes:[{d:1,s:0},{d:3,s:3},{d:5,s:7},{d:7,s:10}]},
+  {symbol:'m(maj7)',   thName:'ไมเนอร์เมเจอร์เซเว่น', family:'minor', notes:[{d:1,s:0},{d:3,s:3},{d:5,s:7},{d:7,s:11}]},
+  {symbol:'dim7',      thName:'ดิมินิชด์เซเว่น',      family:'minor', notes:[{d:1,s:0},{d:3,s:3},{d:5,s:6},{d:7,s:9}]},
+  {symbol:'m7b5',      thName:'ฮาล์ฟ-ดิมินิชด์เซเว่น', family:'minor', notes:[{d:1,s:0},{d:3,s:3},{d:5,s:6},{d:7,s:10}]},
+  {symbol:'7#5',       thName:'ออกเมนเต็ดเซเว่น',     family:'major', notes:[{d:1,s:0},{d:3,s:4},{d:5,s:8},{d:7,s:10}]},
+  {symbol:'maj7#5',    thName:'ออกเมนเต็ดเมเจอร์เซเว่น', family:'major', notes:[{d:1,s:0},{d:3,s:4},{d:5,s:8},{d:7,s:11}]},
+  {symbol:'7b5',       thName:'เซเว่นแฟลตไฟว์',       family:'major', notes:[{d:1,s:0},{d:3,s:4},{d:5,s:6},{d:7,s:10}]},
+  {symbol:'7sus4',     thName:'เซเว่นซัสโฟร์',        family:'major', notes:[{d:1,s:0},{d:4,s:5},{d:5,s:7},{d:7,s:10}]},
+  {symbol:'add9',      thName:'แอดไนน์',              family:'major', notes:[{d:1,s:0},{d:3,s:4},{d:5,s:7},{d:9,s:2}]},
+  {symbol:'m(add9)',   thName:'ไมเนอร์แอดไนน์',       family:'minor', notes:[{d:1,s:0},{d:3,s:3},{d:5,s:7},{d:9,s:2}]},
+  {symbol:'6/9',       thName:'ซิกซ์-ไนน์',           family:'major', notes:[{d:1,s:0},{d:3,s:4},{d:5,s:7},{d:6,s:9},{d:9,s:2}]},
+  {symbol:'m6/9',      thName:'ไมเนอร์ซิกซ์-ไนน์',    family:'minor', notes:[{d:1,s:0},{d:3,s:3},{d:5,s:7},{d:6,s:9},{d:9,s:2}]},
+  {symbol:'9',         thName:'โดมินันต์ไนน์',        family:'major', notes:[{d:1,s:0},{d:3,s:4},{d:5,s:7},{d:7,s:10},{d:9,s:2}]},
+  {symbol:'maj9',      thName:'เมเจอร์ไนน์',          family:'major', notes:[{d:1,s:0},{d:3,s:4},{d:5,s:7},{d:7,s:11},{d:9,s:2}]},
+  {symbol:'m9',        thName:'ไมเนอร์ไนน์',          family:'minor', notes:[{d:1,s:0},{d:3,s:3},{d:5,s:7},{d:7,s:10},{d:9,s:2}]},
+  {symbol:'7b9',       thName:'เซเว่นแฟลตไนน์',       family:'major', notes:[{d:1,s:0},{d:3,s:4},{d:5,s:7},{d:7,s:10},{d:9,s:1}]},
+  {symbol:'7#9',       thName:'เซเว่นชาร์ปไนน์',      family:'major', notes:[{d:1,s:0},{d:3,s:4},{d:5,s:7},{d:7,s:10},{d:9,s:3}]},
+  {symbol:'7#11',      thName:'เซเว่นชาร์ปอีเลฟเว่น', family:'major', notes:[{d:1,s:0},{d:3,s:4},{d:5,s:7},{d:7,s:10},{d:11,s:6}]},
+  {symbol:'maj7#11',   thName:'เมเจอร์เซเว่นชาร์ปอีเลฟเว่น', family:'major', notes:[{d:1,s:0},{d:3,s:4},{d:5,s:7},{d:7,s:11},{d:11,s:6}]},
+  {symbol:'11',        thName:'โดมินันต์อีเลฟเว่น',   family:'major', notes:[{d:1,s:0},{d:3,s:4},{d:5,s:7},{d:7,s:10},{d:9,s:2},{d:11,s:5}]},
+  {symbol:'11(no3)',   thName:'อีเลฟเว่น (ไม่มีโน้ตที่ 3)', family:'major', notes:[{d:1,s:0},{d:5,s:7},{d:7,s:10},{d:9,s:2},{d:11,s:5}]},
+  {symbol:'m11',       thName:'ไมเนอร์อีเลฟเว่น',     family:'minor', notes:[{d:1,s:0},{d:3,s:3},{d:5,s:7},{d:7,s:10},{d:9,s:2},{d:11,s:5}]},
+  {symbol:'13',        thName:'โดมินันต์เธอร์ทีน',    family:'major', notes:[{d:1,s:0},{d:3,s:4},{d:5,s:7},{d:7,s:10},{d:9,s:2},{d:13,s:9}]},
+  {symbol:'maj13',     thName:'เมเจอร์เธอร์ทีน',      family:'major', notes:[{d:1,s:0},{d:3,s:4},{d:5,s:7},{d:7,s:11},{d:9,s:2},{d:13,s:9}]},
+  {symbol:'m13',       thName:'ไมเนอร์เธอร์ทีน',      family:'minor', notes:[{d:1,s:0},{d:3,s:3},{d:5,s:7},{d:7,s:10},{d:9,s:2},{d:13,s:9}]},
+];
+
+const INTERVAL_NAMES = {
+  1:'ไมเนอร์เซคันด์ (m2)', 2:'เมเจอร์เซคันด์ (M2)', 3:'ไมเนอร์เทิร์ด (m3)',
+  4:'เมเจอร์เทิร์ด (M3)', 5:'เพอร์เฟกต์โฟร์ธ (P4)', 6:'ไทรโทน (Tritone)',
+  7:'เพอร์เฟกต์ฟิฟธ์ (P5)', 8:'ไมเนอร์ซิกซ์ (m6)', 9:'เมเจอร์ซิกซ์ (M6)',
+  10:'ไมเนอร์เซเว่น (m7)', 11:'เมเจอร์เซเว่น (M7)'
+};
+
+function thaiDegreeDesc(d, acc){
+  if(d===1) return 'ราก (Root)';
+  if(d===2) return acc===-1?'แฟลตเซคันด์':acc===1?'ชาร์ปเซคันด์':'เมเจอร์เซคันด์ (ซัส 2)';
+  if(d===3) return acc<=-1?'ไมเนอร์เทิร์ด':'เมเจอร์เทิร์ด';
+  if(d===4) return acc===1?'ชาร์ปโฟร์ธ':'เพอร์เฟกต์โฟร์ธ (ซัส 4)';
+  if(d===5) return acc<=-1?'แฟลตไฟว์ (ดิมินิชด์)':acc>=1?'ชาร์ปไฟว์ (ออกเมนเต็ด)':'เพอร์เฟกต์ฟิฟธ์';
+  if(d===6) return 'เมเจอร์ซิกซ์ธ์';
+  if(d===7) return acc<=-2?'ดิมินิชด์เซเว่นธ์ (𝄫7)':acc===-1?'ไมเนอร์เซเว่นธ์':'เมเจอร์เซเว่นธ์';
+  if(d===9) return acc===-1?'แฟลตไนน์ (♭9)':acc===1?'ชาร์ปไนน์ (♯9)':'ไนน์ธ์';
+  if(d===11) return acc===1?'ชาร์ปอีเลฟเว่น (♯11)':'อีเลฟเว่นธ์';
+  if(d===13) return 'เธอร์ทีนธ์';
+  return '';
+}
+function shortDeg(d,acc){
+  const base = String(d);
+  const pfx = acc<=-2?'𝄫':acc===-1?'♭':acc===1?'♯':acc>=2?'𝄪':'';
+  return pfx+base;
+}
+
+function intervalSetOf(formula){
+  return new Set(formula.notes.map(n=>n.s));
+}
+function relativeSet(rootPc, pcs){
+  return new Set(pcs.map(pc => ((pc-rootPc)%12+12)%12));
+}
+function setEq(a,b){
+  if(a.size!==b.size) return false;
+  for(const x of a) if(!b.has(x)) return false;
+  return true;
+}
+function matchAtRoot(rootPc, pcs){
+  const rel = relativeSet(rootPc, pcs);
+  for(const f of FORMULAS){
+    if(setEq(intervalSetOf(f), rel)) return f;
+  }
+  return null;
+}
+
+// Build full chord analysis object for a given ordered pc list (first = intended root)
+function analyzeChord(orderedPcs){
+  const uniquePcs = [...new Set(orderedPcs)];
+  if(uniquePcs.length===0) return {type:'empty'};
+  if(uniquePcs.length===1){
+    const spell = rootSpelling(uniquePcs[0],'major');
+    return {type:'single', name: spellNote(spell.l,spell.a)};
+  }
+  if(uniquePcs.length===2){
+    const rootPc = orderedPcs[0];
+    const f = matchAtRoot(rootPc, uniquePcs);
+    if(f) return buildResult(rootPc, f, uniquePcs);
+    const other = uniquePcs.find(p=>p!==rootPc);
+    const iv = ((other-rootPc)%12+12)%12;
+    const spell = rootSpelling(rootPc,'major');
+    return {type:'interval', rootName: spellNote(spell.l,spell.a), intervalName: INTERVAL_NAMES[iv] || '—'};
+  }
+  // 3+ notes: try root = first clicked, then fall back to any other note as root
+  const tryOrder = [orderedPcs[0], ...uniquePcs.filter(p=>p!==orderedPcs[0])];
+  let primary = null;
+  for(const r of tryOrder){
+    const f = matchAtRoot(r, uniquePcs);
+    if(f){ primary = {rootPc:r, formula:f}; break; }
+  }
+  // collect alternates (other roots with valid exact matches)
+  const alternates = [];
+  for(const r of uniquePcs){
+    if(primary && r===primary.rootPc) continue;
+    const f = matchAtRoot(r, uniquePcs);
+    if(f) alternates.push({rootPc:r, formula:f});
+  }
+  if(!primary){
+    return {type:'nomatch', pcs: uniquePcs, rootPc: orderedPcs[0]};
+  }
+  const result = buildResult(primary.rootPc, primary.formula, uniquePcs);
+  result.alternates = alternates.map(a => buildResult(a.rootPc, a.formula, uniquePcs));
+  return result;
+}
+
+function buildResult(rootPc, formula, uniquePcs){
+  const rootSpell = rootSpelling(rootPc, formula.family);
+  const rootName = spellNote(rootSpell.l, rootSpell.a);
+  const tones = formula.notes.map(n=>{
+    const t = chordToneName(rootPc, rootSpell, n.d, n.s);
+    return {
+      name: t.name,
+      degLabel: thaiDegreeDesc(n.d, t.acc) + ' (' + shortDeg(n.d,t.acc) + ')',
+    };
+  });
+  return {
+    type:'chord',
+    rootPc, formula, rootName,
+    symbol: rootName + formula.symbol,
+    fullNameTh: rootName + ' ' + formula.thName,
+    tones
+  };
+}
+
+/* ============================= AUDIO ============================= */
+let audioCtx=null;
+function ensureCtx(){
+  if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==='suspended') audioCtx.resume();
+  return audioCtx;
+}
+function midiFreq(midi){ return 440*Math.pow(2,(midi-69)/12); }
+function pcOctaveToMidi(pc,octave){ return (octave+1)*12+pc; }
+
+function playNote(ctx, freq, startTime, dur, gainScale){
+  const osc1 = ctx.createOscillator();
+  osc1.type='sine';
+  osc1.frequency.value=freq;
+  const osc2 = ctx.createOscillator();
+  osc2.type='sine';
+  osc2.frequency.value=freq*2;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, startTime);
+  g.gain.exponentialRampToValueAtTime(0.5*gainScale, startTime+0.012);
+  g.gain.exponentialRampToValueAtTime(0.28*gainScale, startTime+0.16);
+  g.gain.exponentialRampToValueAtTime(0.0001, startTime+dur);
+  const g2 = ctx.createGain();
+  g2.gain.value=0.22;
+  osc2.connect(g2); g2.connect(g);
+  osc1.connect(g);
+  g.connect(ctx.destination);
+  osc1.start(startTime); osc1.stop(startTime+dur+0.05);
+  osc2.start(startTime); osc2.stop(startTime+dur+0.05);
+}
+function playChordPcs(orderedPcs){
+  if(orderedPcs.length===0) return;
+  const ctx = ensureCtx();
+  const now = ctx.currentTime + 0.02;
+  const rootPc = orderedPcs[0];
+  const uniquePcs = [...new Set(orderedPcs)];
+  const others = uniquePcs.filter(p=>p!==rootPc).sort((a,b)=>{
+    const ra = ((a-rootPc)%12+12)%12, rb=((b-rootPc)%12+12)%12;
+    return ra-rb;
+  });
+  const dur = 1.7;
+  playNote(ctx, midiFreq(pcOctaveToMidi(rootPc,3)), now, dur, 1.0);
+  others.forEach((pc,i)=>{
+    playNote(ctx, midiFreq(pcOctaveToMidi(pc,4)), now+0.03*(i+1), dur-0.03*(i+1), 0.85);
+  });
+}
+
+/* ============================= UI WIRING ============================= */
+const WHITE = [0,2,4,5,7,9,11]; // C D E F G A B
+const BLACK = [1,3,6,8,10];     // C# D# F# G# A#
+const WHITE_LABELS = ['C','D','E','F','G','A','B'];
+const BLACK_LABELS = ['C♯/D♭','D♯/E♭','F♯/G♭','G♯/A♭','A♯/B♭'];
+
+let currentMode='free';
+let selected = []; // ordered array of pcs (click order), free mode
+let challengeSelected = []; // separate selection state for challenge mode
+let challengeTarget = null;
+
+const pianoEl = document.getElementById('piano');
+function buildPiano(){
+  pianoEl.innerHTML='';
+  const KEY_W=60;
+  WHITE.forEach((pc,i)=>{
+    const el=document.createElement('div');
+    el.className='wkey';
+    el.dataset.pc=pc;
+    el.style.left=(i*KEY_W)+'px';
+    el.textContent=WHITE_LABELS[i];
+    el.addEventListener('click', ()=>toggleKey(pc));
+    pianoEl.appendChild(el);
+  });
+  const blackPositions=[0,1,3,4,5]; // index among white gaps (skip E-F gap)
+  const blackAfterWhiteIndex=[0,1,3,4,5];
+  BLACK.forEach((pc,i)=>{
+    const el=document.createElement('div');
+    el.className='bkey';
+    el.dataset.pc=pc;
+    const leftEdge = (blackAfterWhiteIndex[i]+1)*KEY_W - 17;
+    el.style.left=leftEdge+'px';
+    el.textContent=BLACK_LABELS[i];
+    el.addEventListener('click', (e)=>{ e.stopPropagation(); toggleKey(pc); });
+    pianoEl.appendChild(el);
+  });
+}
+buildPiano();
+
+function activeSelection(){ return currentMode==='free' ? selected : challengeSelected; }
+function setActiveSelection(arr){ if(currentMode==='free') selected=arr; else challengeSelected=arr; }
+
+function toggleKey(pc){
+  let arr = activeSelection().slice();
+  const idx = arr.indexOf(pc);
+  if(idx>=0){ arr.splice(idx,1); } else { arr.push(pc); }
+  setActiveSelection(arr);
+  renderPianoState();
+  renderChips();
+  if(currentMode==='free') renderResult();
+  else clearFeedback();
+}
+
+function renderPianoState(){
+  const arr = activeSelection();
+  document.querySelectorAll('.wkey,.bkey').forEach(el=>{
+    const pc = Number(el.dataset.pc);
+    el.classList.remove('selected','root-selected');
+    const order = arr.indexOf(pc);
+    const badge = el.querySelector('.order-badge');
+    if(badge) badge.remove();
+    if(order>=0){
+      el.classList.add(order===0 ? 'root-selected' : 'selected');
+      const b=document.createElement('div');
+      b.className='order-badge';
+      b.textContent=order+1;
+      el.appendChild(b);
+    }
+  });
+}
+
+function renderChips(){
+  const arr = activeSelection();
+  const chipsEl = document.getElementById('chips');
+  chipsEl.innerHTML='';
+  if(arr.length===0){
+    chipsEl.innerHTML = '<span style="color:var(--ink-soft);font-size:13px;">ยังไม่ได้เลือกโน้ต</span>';
+    return;
+  }
+  arr.forEach((pc,i)=>{
+    const spell = rootSpelling(pc, 'major');
+    const name = spellNote(spell.l, spell.a);
+    const chip=document.createElement('span');
+    chip.className='chip'+(i===0?' root':'');
+    chip.textContent=(i===0?'★ ':'')+name;
+    chipsEl.appendChild(chip);
+  });
+}
+
+function renderResult(){
+  const arr = selected;
+  const card = document.getElementById('resultCard');
+  if(arr.length===0){
+    card.innerHTML = '<p class="result-empty">แตะคีย์เปียโนด้านบนเพื่อเริ่มสร้างคอร์ด โน้ตตัวแรกที่แตะจะถูกใช้เป็น "ราก" (Root) ของคอร์ด</p>';
+    return;
+  }
+  const analysis = analyzeChord(arr);
+  if(analysis.type==='single'){
+    card.innerHTML = `<p class="result-empty">โน้ตเดี่ยว: <b style="color:var(--navy)">${analysis.name}</b> — เพิ่มโน้ตอีกอย่างน้อย 1 ตัวเพื่อเริ่มวิเคราะห์เป็นคอร์ด</p>`;
+    return;
+  }
+  if(analysis.type==='interval'){
+    card.innerHTML = `<p class="result-empty">มี 2 โน้ต — ยังไม่ใช่คอร์ดที่สมบูรณ์ แต่ช่วงเสียงจาก <b>${analysis.rootName}</b> คือ <b style="color:var(--navy)">${analysis.intervalName}</b><br><span style="font-size:13px">(ลองเพิ่มโน้ตที่ 3 เพื่อให้ครบเป็นไตรแอด)</span></p>`;
+    return;
+  }
+  if(analysis.type==='nomatch'){
+    card.innerHTML = `<p class="no-match">ชุดโน้ตนี้ไม่ตรงกับสูตรคอร์ดมาตรฐานในระบบ</p>
+      <p class="result-empty" style="margin-top:8px">ลองปรับโน้ต หรือแตะโน้ตอื่นเป็นตัวแรกเพื่อเปลี่ยนราก — บางครั้งชุดโน้ตเดียวกันอาจเป็นคอร์ดที่รู้จักได้เมื่อมองจากรากอื่น</p>`;
+    return;
+  }
+  let html = `<div class="chord-symbol">${analysis.symbol}</div>
+    <div class="chord-fullname">${analysis.fullNameTh}</div>
+    <div class="tone-list">`;
+  analysis.tones.forEach(t=>{
+    html += `<div class="tone-item"><div class="tn">${t.name}</div><div class="td">${t.degLabel}</div></div>`;
+  });
+  html += `</div>`;
+  if(analysis.alternates && analysis.alternates.length>0){
+    html += `<div class="alt-block"><b>การตีความอื่นที่เป็นไปได้จากโน้ตชุดนี้:</b><br>`;
+    analysis.alternates.forEach(a=>{
+      html += `${a.symbol} — ${a.fullNameTh} (มองจาก ${a.rootName} เป็นราก)<br>`;
+    });
+    html += `</div>`;
+  }
+  card.innerHTML = html;
+}
+
+document.getElementById('playBtn').addEventListener('click', ()=>{
+  playChordPcs(activeSelection());
+});
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  setActiveSelection([]);
+  renderPianoState();
+  renderChips();
+  if(currentMode==='free') renderResult();
+  else clearFeedback();
+});
+
+/* ---- mode tabs ---- */
+document.querySelectorAll('.mode-tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.mode-tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    currentMode = tab.dataset.mode;
+    document.getElementById('panel-free').classList.toggle('active', currentMode==='free');
+    document.getElementById('panel-challenge').classList.toggle('active', currentMode==='challenge');
+    renderPianoState();
+    renderChips();
+    if(currentMode==='challenge' && !challengeTarget) newChallenge();
+  });
+});
+
+/* ---- challenge mode ---- */
+const DIFF_POOLS = {
+  easy: FORMULAS.filter(f=>['','m','dim','aug','sus2','sus4','5'].includes(f.symbol)),
+  mid:  FORMULAS.filter(f=>['','m','dim','aug','sus2','sus4','6','m6','7','maj7','m7','dim7','m7b5','7sus4'].includes(f.symbol)),
+  hard: FORMULAS
+};
+function newChallenge(){
+  const diff = document.getElementById('diffSelect').value;
+  const pool = DIFF_POOLS[diff];
+  const formula = pool[Math.floor(Math.random()*pool.length)];
+  const rootPc = Math.floor(Math.random()*12);
+  challengeTarget = buildResult(rootPc, formula, formula.notes.map(n=>((rootPc+n.s)%12+12)%12));
+  document.getElementById('targetName').textContent = challengeTarget.symbol + '  (' + challengeTarget.fullNameTh + ')';
+  challengeSelected = [];
+  setActiveSelection([]);
+  renderPianoState();
+  renderChips();
+  clearFeedback();
+}
+function targetPcSet(){
+  return new Set(challengeTarget.formula.notes.map(n=>((challengeTarget.rootPc+n.s)%12+12)%12));
+}
+function clearFeedback(){
+  const fb=document.getElementById('feedback');
+  fb.className='feedback';
+  fb.textContent='';
+}
+document.getElementById('checkBtn').addEventListener('click', ()=>{
+  const userSet = new Set(challengeSelected);
+  const targetSet = targetPcSet();
+  const fb = document.getElementById('feedback');
+  if(setEq(userSet, targetSet)){
+    fb.className='feedback correct';
+    fb.textContent='✔ ถูกต้อง! โน้ตที่เลือกตรงกับ '+challengeTarget.symbol+' พอดี';
+  } else {
+    fb.className='feedback wrong';
+    fb.textContent='ยังไม่ตรงนะ ลองตรวจสอบโน้ตอีกครั้ง (กดปุ่ม "แสดงเฉลย" ได้ถ้าต้องการความช่วยเหลือ)';
+  }
+});
+document.getElementById('revealBtn').addEventListener('click', ()=>{
+  const target=[...targetPcSet()];
+  target.sort((a,b)=>{
+    const ra=((a-challengeTarget.rootPc)%12+12)%12, rb=((b-challengeTarget.rootPc)%12+12)%12;
+    return ra-rb;
+  });
+  challengeSelected = [challengeTarget.rootPc, ...target.filter(p=>p!==challengeTarget.rootPc)];
+  setActiveSelection(challengeSelected);
+  renderPianoState();
+  renderChips();
+  const fb=document.getElementById('feedback');
+  fb.className='feedback correct';
+  fb.textContent='เฉลย: '+challengeTarget.tones.map(t=>t.name).join(' - ');
+});
+document.getElementById('nextBtn').addEventListener('click', newChallenge);
+document.getElementById('diffSelect').addEventListener('change', newChallenge);
+
+/* init */
+renderChips();
+renderResult();
+</script>
+</body>
+</html>
