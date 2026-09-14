@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saxophone Fingering Interactive Simulator</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&family=Mali:wght@400;600&display=swap" rel="stylesheet">
+    <!-- VexFlow CDN สำหรับวาดโน้ตสากล -->
+    <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
+    <style>
+        :root {
+            --bg-color: #fcf8f2;
+            --card-bg: #ffffff;
+            --accent-color: #f3a847;
+            --accent-hover: #e09636;
+            --text-main: #4a3e3d;
+            --text-sub: #8c7b79;
+            --key-off: #fffcf7;
+            --key-border: #8e7c68;
+            --key-on: #ff4757;
+            --octave-on: #2ed573;
+            --shadow: 0 10px 30px rgba(168, 145, 128, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Kanit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Cute Floating Notes */
+        .cute-note {
+            position: absolute;
+            user-select: none;
+            pointer-events: none;
+            z-index: 0;
+            animation: floatCute 4s ease-in-out infinite alternate;
+        }
+        @keyframes floatCute {
+            0% { transform: translateY(0px) rotate(0deg) scale(1); }
+            100% { transform: translateY(-15px) rotate(8deg) scale(1.05); }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 950px;
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            margin-top: 5px;
+        }
+
+        header {
+            text-align: center;
+        }
+
+        h1 {
+            font-family: 'Mali', cursive;
+            color: var(--text-main);
+            font-size: 2.1rem;
+            margin-bottom: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        p.subtitle {
+            color: var(--text-sub);
+            font-size: 0.9rem;
+        }
+
+        /* Controls Panel */
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+            background: #faf6f0;
+            padding: 12px 18px;
+            border-radius: 16px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        label {
+            font-weight: 500;
+            color: var(--text-main);
+            font-size: 0.95rem;
+        }
+
+        select {
+            padding: 7px 14px;
+            border-radius: 10px;
+            border: 2px solid #b5a897;
+            background: white;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        select:focus {
+            border-color: var(--accent-color);
+        }
+
+        .btn {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-2deg);
+        }
+
+        .btn-secondary {
+            background-color: #eae3d9;
+            color: var(--text-main);
+        }
+
+        .btn-secondary:hover {
+            background-color: #ded5c7;
+        }
+
+        /* Sheet Music Container */
+        .sheet-music-container {
+            background: white;
+            border: 1px solid #f0e6d9;
+            border-radius: 16px;
+            padding: 8px;
+            display: flex;
+            justify-content: center;
+            position: relative;
+            min-height: 135px;
+            overflow-x: auto;
+            cursor: pointer;
+        }
+
+        #vexflow-out {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Interactive Diagram & Info Area */
+        .interactive-area {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-around;
+            align-items: center;
+            background: #faf6f0;
+            border-radius: 20px;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        @media (max-width: 750px) {
+            .interactive-area {
+                flex-direction: column;
+            }
+        }
+
+        .note-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 180px;
+        }
+
+        .sax-type-badge {
+            background: var(--accent-color);
+            color: white;
+            padding: 3px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .note-name-large {
+            font-size: 3.5rem;
+            font-weight: 600;
+            color: var(--accent-color);
+            font-family: 'Mali', cursive;
+            line-height: 1;
+        }
+
+        .note-octave {
+            font-size: 0.95rem;
+            color: var(--text-sub);
+            margin-top: 5px;
+            text-align: center;
+        }
+
+        /* SVG Saxophone Display Container */
+        .sax-svg-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            height: 480px;
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+            border: 1px solid #e2d7c7;
+        }
+
+        svg#sax-svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.08));
+        }
+
+        /* Key Styling & Active Glow (ไม่มีข้อความตัวอักษร) */
+        .sax-key {
+            fill: var(--key-off);
+            stroke: var(--key-border);
+            stroke-width: 2.5;
+            transition: all 0.15s ease;
+            cursor: pointer;
+        }
+
+        .sax-key.active {
+            fill: var(--key-on) !important;
+            stroke: #c0392b !important;
+            filter: drop-shadow(0 0 10px rgba(255, 71, 87, 0.9));
+        }
+
+        .sax-key.octave.active {
+            fill: var(--octave-on) !important;
+            stroke: #26af5f !important;
+            filter: drop-shadow(0 0 10px rgba(46, 213, 115, 0.9));
+        }
+
+        footer {
+            margin-top: 15px;
+            color: var(--text-sub);
+            font-size: 0.85rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Cute Musical Characters -->
+    <svg class="cute-note" style="top: 25px; left: 3%;" width="45" height="45" viewBox="0 0 50 50">
+        <path d="M20,35 A8,8 0 1,1 12,27 L12,10 L35,5 L35,22 A8,8 0 1,1 27,14 L27,8 L20,10 Z" fill="#f3a847"/>
+        <circle cx="16" cy="30" r="1.5" fill="#fff"/><circle cx="31" cy="17" r="1.5" fill="#fff"/>
+        <path d="M14,33 Q16,35 18,33" stroke="#fff" stroke-width="1.2" fill="none"/>
+    </svg>
+
+    <svg class="cute-note" style="top: 120px; right: 3%; animation-delay: 1s;" width="40" height="40" viewBox="0 0 50 50">
+        <circle cx="25" cy="25" r="20" fill="#74b9ff"/>
+        <circle cx="18" cy="20" r="2.5" fill="#2c3e50"/><circle cx="32" cy="20" r="2.5" fill="#2c3e50"/>
+        <path d="M20,28 Q25,35 30,28" stroke="#2c3e50" stroke-width="2" fill="none"/>
+    </svg>
+
+    <div class="container">
+        <header>
+            <h1>🎷 Saxophone Fingering Simulator</h1>
+            <p class="subtitle">สื่อเรียนรู้ตำแหน่งนิ้วแซกโซโฟนจำลอง สมจริง ชัดเจน 12 สเกล</p>
+        </header>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="control-group">
+                <label for="sax-type">ชนิดแซกโซโฟน:</label>
+                <select id="sax-type">
+                    <option value="alto">Alto Sax (Eb)</option>
+                    <option value="soprano">Soprano Sax (Bb)</option>
+                    <option value="tenor">Tenor Sax (Bb)</option>
+                    <option value="baritone">Baritone Sax (Eb)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="scale-select">เลือกสเกล:</label>
+                <select id="scale-select">
+                    <option value="C">C Major</option>
+                    <option value="G">G Major</option>
+                    <option value="D">D Major</option>
+                    <option value="A">A Major</option>
+                    <option value="E">E Major</option>
+                    <option value="B">B Major</option>
+                    <option value="F#">F# Major</option>
+                    <option value="Db">Db Major</option>
+                    <option value="Ab">Ab Major</option>
+                    <option value="Eb">Eb Major</option>
+                    <option value="Bb">Bb Major</option>
+                    <option value="F">F Major</option>
+                </select>
+            </div>
+            
+            <button class="btn btn-primary" id="btn-play">▶ เล่นสเกล</button>
+            <button class="btn btn-secondary" id="btn-prev">◀ ก่อนหน้า</button>
+            <button class="btn btn-secondary" id="btn-next">ถัดไป ▶</button>
+        </div>
+
+        <!-- แผ่นโน้ตเพลง VexFlow -->
+        <div class="sheet-music-container" title="คลิกที่ตัวโน้ตบนบรรทัด 5 เส้นเพื่อฟังเสียงเดี่ยวได้">
+            <div id="vexflow-out"></div>
+        </div>
+
+        <!-- Interactive Diagram & Note Info -->
+        <div class="interactive-area">
+            <div class="note-display">
+                <span class="sax-type-badge" id="sax-badge">Alto Saxophone (Eb)</span>
+                <div class="note-name-large" id="current-note-name">C4</div>
+                <div class="note-octave" id="current-note-info">สเกล C Major (ลำดับที่ 1)</div>
+            </div>
+
+            <!-- Realistic SVG Saxophone Diagram (Clean Keys without Text) -->
+            <div class="sax-svg-wrapper">
+                <svg id="sax-svg" viewBox="0 0 480 460">
+                    <defs>
+                        <!-- Golden Brass Gradients -->
+                        <linearGradient id="goldBody" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#f5d061"/>
+                            <stop offset="50%" stop-color="#e6a12c"/>
+                            <stop offset="100%" stop-color="#b87414"/>
+                        </linearGradient>
+                        <linearGradient id="goldBell" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#e6a12c"/>
+                            <stop offset="50%" stop-color="#f5d061"/>
+                            <stop offset="100%" stop-color="#b87414"/>
+                        </linearGradient>
+                    </defs>
+
+                    <!-- SAXOPHONE REALISTIC BODY SHAPE -->
+                    <g id="sax-body-group">
+                        <!-- Default Alto Shape -->
+                        <path d="M 240,20 Q 240,45 200,50 L 195,60 L 210,62 Q 250,55 250,20 Z" fill="#2c3e50" />
+                        <path d="M 210,62 Q 255,55 255,100 L 235,103 Q 235,72 195,60 Z" fill="url(#goldBody)" stroke="#a0600a" stroke-width="1.5" />
+                        <path d="M 235,103 L 235,330 Q 235,430 150,430 Q 70,430 70,310 L 70,195 Q 70,135 130,135 Q 180,135 180,215 L 180,315 Z" 
+                              fill="none" stroke="url(#goldBody)" stroke-width="42" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M 50,215 C 25,160 110,110 160,140 C 130,185 80,195 50,215 Z" fill="url(#goldBell)" stroke="#a0600a" stroke-width="2"/>
+                    </g>
+
+                    <!-- Key Mechanism Rods (ก้านกลไกปุ่ม) -->
+                    <line x1="260" y1="110" x2="260" y2="380" stroke="#7f8c8d" stroke-width="4" />
+                    <line x1="210" y1="130" x2="210" y2="370" stroke="#b5a897" stroke-width="3" />
+
+                    <!-- ================= CLEAN KEYS (NO TEXT) ================= -->
+                    <!-- OCTAVE KEY -->
+                    <rect id="key-octave" class="sax-key octave" x="266" y="98" width="30" height="24" rx="6" />
+
+                    <!-- LEFT HAND MAIN KEYS (1 - 2 - 3) -->
+                    <circle id="key-lh1" class="sax-key" cx="235" cy="150" r="16" />
+                    <circle id="key-lh2" class="sax-key" cx="235" cy="190" r="16" />
+                    <circle id="key-lh3" class="sax-key" cx="235" cy="230" r="16" />
+
+                    <!-- LEFT HAND PINKY CLUSTER (G#, C#, B, Bb) -->
+                    <rect id="key-gis" class="sax-key" x="264" y="200" width="30" height="18" rx="5" />
+                    <rect id="key-cs" class="sax-key" x="264" y="222" width="30" height="18" rx="5" />
+                    <rect id="key-lowb" class="sax-key" x="264" y="244" width="30" height="18" rx="5" />
+                    <rect id="key-lowbb" class="sax-key" x="264" y="266" width="30" height="18" rx="5" />
+
+                    <!-- RIGHT HAND SIDE KEYS (side Bb, C) -->
+                    <rect id="key-sidebb" class="sax-key" x="190" y="275" width="22" height="24" rx="5" />
+                    <rect id="key-sidec" class="sax-key" x="190" y="303" width="22" height="24" rx="5" />
+
+                    <!-- RIGHT HAND MAIN KEYS (4 - 5 - 6) -->
+                    <circle id="key-rh1" class="sax-key" cx="235" cy="285" r="16" />
+                    <circle id="key-rh2" class="sax-key" cx="235" cy="325" r="16" />
+                    <circle id="key-rh3" class="sax-key" cx="235" cy="365" r="16" />
+
+                    <!-- RIGHT HAND PINKY CLUSTER (Eb, Low C) -->
+                    <rect id="key-eb" class="sax-key" x="264" y="338" width="32" height="20" rx="5" />
+                    <rect id="key-lowc" class="sax-key" x="264" y="362" width="32" height="20" rx="5" />
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>สร้างด้วย ❤️ สำหรับผู้ฝึกแซ็กโซโฟน | Web Audio API & VexFlow</p>
+    </footer>
+
+    <script>
+        // --- 1. ข้อมูลสเกล 12 คีย์ และแผนผังนิ้วกด ---
+        const SCALES = {
+            "C":  { keySig: "C",  notes: ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5"] },
+            "G":  { keySig: "G",  notes: ["G4", "A4", "B4", "C5", "D5", "E5", "F#5", "G5"] },
+            "D":  { keySig: "D",  notes: ["D4", "E4", "F#4", "G4", "A4", "B4", "C#5", "D5"] },
+            "A":  { keySig: "A",  notes: ["A4", "B4", "C#5", "D5", "E5", "F#5", "G#5", "A5"] },
+            "E":  { keySig: "E",  notes: ["E4", "F#4", "G#4", "A4", "B4", "C#5", "D#5", "E5"] },
+            "B":  { keySig: "B",  notes: ["B4", "C#5", "D#5", "E5", "F#5", "G#5", "A#5", "B5"] },
+            "F#": { keySig: "F#", notes: ["F#4", "G#4", "A#4", "B4", "C#5", "D#5", "E#5", "F#5"] },
+            "Db": { keySig: "Db", notes: ["Db4", "Eb4", "F4", "Gb4", "Ab4", "Bb4", "C5", "Db5"] },
+            "Ab": { keySig: "Ab", notes: ["Ab4", "Bb4", "C5", "Db5", "Eb5", "F5", "G5", "Ab5"] },
+            "Eb": { keySig: "Eb", notes: ["Eb4", "F4", "G4", "Ab4", "Bb4", "C5", "D5", "Eb5"] },
+            "Bb": { keySig: "Bb", notes: ["Bb4", "C5", "D5", "Eb5", "F5", "G5", "A5", "Bb5"] },
+            "F":  { keySig: "F",  notes: ["F4", "G4", "A4", "Bb4", "C5", "D5", "E5", "F5"] }
+        };
+
+        const NOTE_FREQS = {
+            "C4": 261.63, "C#4": 277.18, "Db4": 277.18, "D4": 293.66, "D#4": 311.13, "Eb4": 311.13,
+            "E4": 329.63, "E#4": 349.23, "F4": 349.23, "F#4": 369.99, "Gb4": 369.99, "G4": 392.00,
+            "G#4": 415.30, "Ab4": 415.30, "A4": 440.00, "A#4": 466.16, "Bb4": 466.16, "B4": 493.88,
+            "C5": 523.25, "C#5": 554.37, "Db5": 554.37, "D5": 587.33, "D#5": 622.25, "Eb5": 622.25,
+            "E5": 659.25, "F5": 698.46, "E#5": 698.46, "F#5": 739.99, "Gb5": 739.99, "G5": 783.99,
+            "G#5": 830.61, "Ab5": 830.61, "A5": 880.00, "A#5": 932.33, "Bb5": 932.33, "B5": 987.77
+        };
+
+        const SAX_PITCH_SHIFT = {
+            "soprano": 1.498,  
+            "alto": 1.0,       
+            "tenor": 0.749,    
+            "baritone": 0.5    
+        };
+
+        const FINGERINGS = {
+            "C4":  ["lh1", "lh2", "lh3", "rh1", "rh2", "rh3", "lowc"],
+            "C#4": ["lh1", "lh2", "lh3", "rh1", "rh2", "rh3", "cs"],
+            "Db4": ["lh1", "lh2", "lh3", "rh1", "rh2", "rh3", "cs"],
+            "D4":  ["lh1", "lh2", "lh3", "rh1", "rh2", "rh3"],
+            "D#4": ["lh1", "lh2", "lh3", "rh1", "rh2", "rh3", "eb"],
+            "Eb4": ["lh1", "lh2", "lh3", "rh1", "rh2", "rh3", "eb"],
+            "E4":  ["lh1", "lh2", "lh3", "rh1", "rh2"],
+            "E#4": ["lh1", "lh2", "lh3", "rh1"],
+            "F4":  ["lh1", "lh2", "lh3", "rh1"],
+            "F#4": ["lh1", "lh2", "lh3", "rh2"],
+            "Gb4": ["lh1", "lh2", "lh3", "rh2"],
+            "G4":  ["lh1", "lh2", "lh3"],
+            "G#4": ["lh1", "lh2", "lh3", "gis"],
+            "Ab4": ["lh1", "lh2", "lh3", "gis"],
+            "A4":  ["lh1", "lh2"],
+            "A#4": ["lh1", "sidebb"], 
+            "Bb4": ["lh1", "sidebb"],
+            "B4":  ["lh1"],
+            "C5":  ["lh2"],
+            "C#5": [], 
+            "Db5": [],
+            "D5":  ["octave", "lh1", "lh2", "lh3", "rh1", "rh2", "rh3"],
+            "D#5": ["octave", "lh1", "lh2", "lh3", "rh1", "rh2", "rh3", "eb"],
+            "Eb5": ["octave", "lh1", "lh2", "lh3", "rh1", "rh2", "rh3", "eb"],
+            "E5":  ["octave", "lh1", "lh2", "lh3", "rh1", "rh2"],
+            "E#5": ["octave", "lh1", "lh2", "lh3", "rh1"],
+            "F5":  ["octave", "lh1", "lh2", "lh3", "rh1"],
+            "F#5": ["octave", "lh1", "lh2", "lh3", "rh2"],
+            "Gb5": ["octave", "lh1", "lh2", "lh3", "rh2"],
+            "G5":  ["octave", "lh1", "lh2", "lh3"],
+            "G#5": ["octave", "lh1", "lh2", "lh3", "gis"],
+            "Ab5": ["octave", "lh1", "lh2", "lh3", "gis"],
+            "A5":  ["octave", "lh1", "lh2"],
+            "A#5": ["octave", "lh1", "sidebb"],
+            "Bb5": ["octave", "lh1", "sidebb"],
+            "B5":  ["octave", "lh1"]
+        };
+
+        // --- 2. State & Sound Engine ---
+        let currentScale = "C";
+        let currentSaxType = "alto";
+        let currentIndex = 0;
+        let isPlaying = false;
+        let playInterval = null;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSaxSoftTone(freq, duration = 0.6) {
+            initAudio();
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const shift = SAX_PITCH_SHIFT[currentSaxType] || 1.0;
+            const finalFreq = freq * shift;
+
+            const osc = audioCtx.createOscillator();
+            const oscSub = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const filter = audioCtx.createBiquadFilter();
+
+            osc.type = 'sawtooth';
+            oscSub.type = 'triangle';
+            osc.frequency.setValueAtTime(finalFreq, audioCtx.currentTime);
+            oscSub.frequency.setValueAtTime(finalFreq * 0.5, audioCtx.currentTime);
+
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(finalFreq * 2.2, audioCtx.currentTime);
+            filter.Q.value = 1.5;
+
+            const now = audioCtx.currentTime;
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.22, now + 0.12);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+            osc.connect(filter);
+            oscSub.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start(now);
+            oscSub.start(now);
+            osc.stop(now + duration);
+            oscSub.stop(now + duration);
+        }
+
+        // --- 3. Dynamic Saxophone Body Render ---
+        function updateSaxBodyShape() {
+            const bodyGroup = document.getElementById('sax-body-group');
+            if (!bodyGroup) return;
+
+            if (currentSaxType === 'soprano') {
+                bodyGroup.innerHTML = `
+                    <path d="M 235,10 Q 235,35 220,40 L 215,50 L 230,52 Q 255,45 255,10 Z" fill="#2c3e50" />
+                    <path d="M 215,50 L 200,380 Q 200,430 235,430 Q 270,430 270,380 L 255,50 Z" fill="url(#goldBody)" stroke="#a0600a" stroke-width="1.5"/>
+                    <path d="M 200,350 L 175,420 L 295,420 L 270,350 Z" fill="url(#goldBell)" stroke="#a0600a" stroke-width="2"/>
+                `;
+            } else if (currentSaxType === 'tenor') {
+                bodyGroup.innerHTML = `
+                    <path d="M 230,15 Q 230,40 190,45 L 185,55 L 200,57 Q 240,50 240,15 Z" fill="#2c3e50" />
+                    <path d="M 200,57 Q 260,40 260,95 L 235,98 Q 235,65 185,55 Z" fill="url(#goldBody)" stroke="#a0600a" stroke-width="1.5" />
+                    <path d="M 235,98 L 235,340 Q 235,440 150,440 Q 65,440 65,310 L 65,190 Q 65,130 125,130 Q 175,130 175,210 L 175,320 Z" 
+                          fill="none" stroke="url(#goldBody)" stroke-width="46" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M 45,210 C 20,150 105,100 155,130 C 125,178 75,188 45,210 Z" fill="url(#goldBell)" stroke="#a0600a" stroke-width="2"/>
+                `;
+            } else if (currentSaxType === 'baritone') {
+                bodyGroup.innerHTML = `
+                    <path d="M 240,15 Q 240,35 210,40 L 205,48 L 220,50 Q 250,45 250,15 Z" fill="#2c3e50" />
+                    <path d="M 220,50 Q 275,35 275,80 Q 275,105 245,105 L 235,90 Q 255,90 255,75 Q 255,50 205,48 Z" fill="url(#goldBody)" stroke="#a0600a" stroke-width="1.5" />
+                    <path d="M 235,90 L 235,345 Q 235,445 145,445 Q 55,445 55,300 L 55,175 Q 55,115 115,115 Q 170,115 170,195 L 170,325 Z" 
+                          fill="none" stroke="url(#goldBody)" stroke-width="52" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M 35,195 C 10,130 95,80 150,110 C 115,160 65,172 35,195 Z" fill="url(#goldBell)" stroke="#a0600a" stroke-width="2"/>
+                `;
+            } else {
+                bodyGroup.innerHTML = `
+                    <path d="M 240,20 Q 240,45 200,50 L 195,60 L 210,62 Q 250,55 250,20 Z" fill="#2c3e50" />
+                    <path d="M 210,62 Q 255,55 255,100 L 235,103 Q 235,72 195,60 Z" fill="url(#goldBody)" stroke="#a0600a" stroke-width="1.5" />
+                    <path d="M 235,103 L 235,330 Q 235,430 150,430 Q 70,430 70,310 L 70,195 Q 70,135 130,135 Q 180,135 180,215 L 180,315 Z" 
+                          fill="none" stroke="url(#goldBody)" stroke-width="42" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M 50,215 C 25,160 110,110 160,140 C 130,185 80,195 50,215 Z" fill="url(#goldBell)" stroke="#a0600a" stroke-width="2"/>
+                `;
+            }
+        }
+
+        // --- 4. Render VexFlow Sheet Music ---
+        function renderSheetMusic() {
+            const container = document.getElementById("vexflow-out");
+            container.innerHTML = "";
+
+            const { Renderer, Stave, StaveNote, Voice, Formatter } = Vex.Flow;
+            const rendererVF = new Renderer(container, Renderer.Backends.SVG);
+            rendererVF.resize(560, 130);
+            const context = rendererVF.getContext();
+            
+            const stave = new Stave(10, 10, 530);
+            const scaleData = SCALES[currentScale];
+
+            stave.addClef("treble").addKeySignature(scaleData.keySig);
+            stave.setContext(context).draw();
+
+            const notesList = scaleData.notes;
+            const vexNotes = notesList.map((noteStr, idx) => {
+                const noteName = noteStr.slice(0, -1).toLowerCase();
+                const octave = noteStr.slice(-1);
+                let vfKey = noteName[0] + "/" + octave;
+
+                const staveNote = new StaveNote({
+                    clef: "treble",
+                    keys: [vfKey],
+                    duration: "q"
+                });
+
+                if (idx === currentIndex) {
+                    staveNote.setStyle({ fillStyle: "#ff4757", strokeStyle: "#ff4757" });
+                } else {
+                    staveNote.setStyle({ fillStyle: "#4a3e3d", strokeStyle: "#4a3e3d" });
+                }
+
+                return staveNote;
+            });
+
+            const voice = new Voice({ num_beats: notesList.length, beat_value: 4 });
+            voice.addTickables(vexNotes);
+
+            new Formatter().joinVoices([voice]).format([voice], 410);
+            voice.draw(context, stave);
+
+            // Interactive Clickable Notes
+            const svgNotes = container.querySelectorAll('.vf-stavenote');
+            svgNotes.forEach((svgNote, idx) => {
+                svgNote.style.cursor = 'pointer';
+                svgNote.addEventListener('click', () => {
+                    stopPlayback();
+                    currentIndex = idx;
+                    playCurrentNote();
+                });
+            });
+        }
+
+        // --- 5. UI & State Updates ---
+        function updateDisplay() {
+            const notesList = SCALES[currentScale].notes;
+            const currentNote = notesList[currentIndex];
+
+            document.getElementById("current-note-name").innerText = currentNote;
+            document.getElementById("current-note-info").innerText = 
+                `สเกล ${currentScale} Major (ลำดับที่ ${currentIndex + 1}/${notesList.length})`;
+
+            // Update Keys Highlighting
+            const activeKeys = FINGERINGS[currentNote] || [];
+            document.querySelectorAll('.sax-key').forEach(keyEl => {
+                const keyId = keyEl.id.replace("key-", "");
+                if (activeKeys.includes(keyId)) {
+                    keyEl.classList.add("active");
+                } else {
+                    keyEl.classList.remove("active");
+                }
+            });
+
+            renderSheetMusic();
+        }
+
+        function playCurrentNote() {
+            const notesList = SCALES[currentScale].notes;
+            const currentNote = notesList[currentIndex];
+            const freq = NOTE_FREQS[currentNote];
+            if (freq) {
+                playSaxSoftTone(freq);
+            }
+            updateDisplay();
+        }
+
+        // --- 6. Event Listeners ---
+        document.getElementById("sax-type").addEventListener("change", (e) => {
+            currentSaxType = e.target.value;
+            const badgeMap = {
+                "alto": "Alto Saxophone (Eb)",
+                "soprano": "Soprano Saxophone (Bb)",
+                "tenor": "Tenor Saxophone (Bb)",
+                "baritone": "Baritone Saxophone (Eb)"
+            };
+            document.getElementById("sax-badge").innerText = badgeMap[currentSaxType];
+            updateSaxBodyShape();
+            updateDisplay();
+        });
+
+        document.getElementById("scale-select").addEventListener("change", (e) => {
+            currentScale = e.target.value;
+            currentIndex = 0;
+            stopPlayback();
+            updateDisplay();
+        });
+
+        document.getElementById("btn-prev").addEventListener("click", () => {
+            stopPlayback();
+            const notesList = SCALES[currentScale].notes;
+            currentIndex = (currentIndex - 1 + notesList.length) % notesList.length;
+            playCurrentNote();
+        });
+
+        document.getElementById("btn-next").addEventListener("click", () => {
+            stopPlayback();
+            const notesList = SCALES[currentScale].notes;
+            currentIndex = (currentIndex + 1) % notesList.length;
+            playCurrentNote();
+        });
+
+        document.getElementById("btn-play").addEventListener("click", () => {
+            if (isPlaying) {
+                stopPlayback();
+            } else {
+                startPlayback();
+            }
+        });
+
+        function startPlayback() {
+            isPlaying = true;
+            document.getElementById("btn-play").innerText = "⏹ หยุดเล่น";
+            currentIndex = 0;
+            playCurrentNote();
+
+            playInterval = setInterval(() => {
+                const notesList = SCALES[currentScale].notes;
+                currentIndex++;
+                if (currentIndex >= notesList.length) {
+                    stopPlayback();
+                    return;
+                }
+                playCurrentNote();
+            }, 700);
+        }
+
+        function stopPlayback() {
+            isPlaying = false;
+            document.getElementById("btn-play").innerText = "▶ เล่นสเกล";
+            if (playInterval) {
+                clearInterval(playInterval);
+                playInterval = null;
+            }
+        }
+
+        window.addEventListener("DOMContentLoaded", () => {
+            updateSaxBodyShape();
+            updateDisplay();
+        });
+    </script>
+</body>
+</html>
