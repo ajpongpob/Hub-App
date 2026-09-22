@@ -309,8 +309,7 @@
             <h2>Teaching Media Hub</h2>
             <p>
               เลือกสื่อจากรายการด้านซ้ายเพื่อเปิดใช้งาน
-              เมื่อต้องการเพิ่มสื่อใหม่ ให้ใส่ไฟล์ HTML ในโฟลเดอร์ <strong>media</strong>
-              แล้วเพิ่มข้อมูลเพียง 1 รายการใน <strong>media-list.js</strong>
+              รายการสื่อจะดึงไฟล์ทั้งหมดจากโฟลเดอร์ <strong>media</strong> โดยอัตโนมัติ
             </p>
           </div>
         </div>
@@ -386,6 +385,40 @@
       });
     }
 
+    async function loadRepositoryMedia() {
+      try {
+        const response = await fetch(
+          "https://api.github.com/repos/ajpongpob/Hub-App/contents/media?ref=main",
+          { headers: { Accept: "application/vnd.github+json" } }
+        );
+        if (!response.ok) throw new Error(`GitHub API returned ${response.status}`);
+
+        const files = await response.json();
+        const existing = Array.isArray(window.MEDIA_LIST) ? window.MEDIA_LIST : [];
+        const knownPaths = new Set(existing.map(item => item.file));
+        const discovered = files
+          .filter(file => file.type === "file" && !knownPaths.has(`media/${file.name}`))
+          .map(file => {
+            const extension = file.name.split(".").pop().toUpperCase();
+            return {
+              id: `media-${file.name}`,
+              title: file.name,
+              file: `media/${encodeURIComponent(file.name)}`,
+              category: `${extension} file`,
+              description: "ไฟล์ในโฟลเดอร์ media",
+              icon: extension === "HTML" ? "🎼" : "📎"
+            };
+          });
+
+        window.MEDIA_LIST = [...existing, ...discovered].sort((a, b) =>
+          (a.title || a.id).localeCompare(b.title || b.id, "th", { numeric: true })
+        );
+        renderList(searchInputEl.value);
+      } catch (error) {
+        console.error("โหลดรายการไฟล์จาก media ไม่สำเร็จ", error);
+      }
+    }
+
     function openMedia(id) {
       const source = Array.isArray(window.MEDIA_LIST) ? window.MEDIA_LIST : [];
       const item = source.find(entry => entry.id === id);
@@ -428,6 +461,7 @@
     homeButtonEl.addEventListener("click", showHome);
 
     renderList();
+    loadRepositoryMedia();
 
     const initialId = decodeURIComponent(location.hash.replace(/^#/, ""));
     if (initialId) {
