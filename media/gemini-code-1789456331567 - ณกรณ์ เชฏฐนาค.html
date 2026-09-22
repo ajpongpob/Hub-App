@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bass Note Rush</title>
+    <style>
+        :root {
+            --bg-dark: #121212;
+            --bg-panel: #1e1e1e;
+            --text-main: #ffffff;
+            --text-muted: #aaaaaa;
+            --primary: #bb86fc;
+            --primary-hover: #9965f4;
+            --success: #03dac6;
+            --danger: #cf6679;
+            --fretboard-wood: #2c221c;
+            --fret-wire: #8a8a8a;
+            --string-color: #d1d1d1;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Navigation */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background-color: var(--bg-panel);
+            border-bottom: 2px solid #333;
+        }
+        .logo { font-size: 24px; font-weight: bold; color: var(--primary); letter-spacing: 2px; }
+        .nav-links button {
+            background: none; border: none; color: var(--text-main);
+            font-size: 16px; margin-left: 20px; cursor: pointer; text-transform: uppercase;
+            transition: color 0.2s;
+        }
+        .nav-links button:hover, .nav-links button.active { color: var(--primary); }
+
+        /* Views */
+        .view { display: none; padding: 30px; flex: 1; flex-direction: column; align-items: center; }
+        .view.active { display: flex; }
+
+        /* Common UI */
+        h1 { margin-bottom: 20px; font-size: 32px; text-align: center; }
+        h2 { margin-bottom: 15px; color: var(--primary); }
+        .btn {
+            background-color: var(--primary); color: #000;
+            border: none; padding: 12px 24px; font-size: 18px; font-weight: bold;
+            border-radius: 8px; cursor: pointer; transition: transform 0.1s, background 0.2s;
+            margin: 10px;
+        }
+        .btn:hover { background-color: var(--primary-hover); transform: scale(1.05); }
+        .btn-outline { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
+        .btn-outline:hover { background: var(--primary); color: #000; }
+
+        /* Setup / Settings */
+        .panel {
+            background-color: var(--bg-panel); padding: 30px; border-radius: 12px;
+            width: 100%; max-width: 600px; margin-bottom: 20px; text-align: center;
+        }
+        .options-group { margin-bottom: 20px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+        .opt-btn {
+            background: #333; color: white; border: none; padding: 10px 20px;
+            border-radius: 20px; cursor: pointer; font-size: 14px;
+        }
+        .opt-btn.selected { background: var(--primary); color: #000; font-weight: bold; }
+
+        /* Game Header */
+        .game-header { width: 100%; max-width: 800px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .stat-box { background: var(--bg-panel); padding: 10px 20px; border-radius: 8px; text-align: center; }
+        .stat-val { font-size: 24px; font-weight: bold; color: var(--primary); }
+        
+        .question-box { text-align: center; margin-bottom: 20px; }
+        .question-label { font-size: 18px; color: var(--text-muted); text-transform: uppercase; }
+        .target-note { font-size: 72px; font-weight: bold; margin: 10px 0; color: var(--success); text-shadow: 0 0 10px rgba(3, 218, 198, 0.5); }
+
+        /* Timer */
+        .timer-container { width: 100%; max-width: 800px; height: 10px; background: #333; border-radius: 5px; overflow: hidden; margin-bottom: 30px; }
+        .timer-bar { height: 100%; width: 100%; background: var(--success); transition: width 0.1s linear, background-color 0.3s; }
+        .timer-bar.warning { background: var(--danger); }
+
+        /* Fretboard */
+        .fretboard-wrapper {
+            width: 100%; max-width: 1000px; overflow-x: auto; padding-bottom: 20px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .fretboard {
+            display: flex; flex-direction: column; background: var(--fretboard-wood);
+            border-radius: 5px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            padding-left: 40px; margin-top: 20px;
+        }
+        .string-row { display: flex; position: relative; height: 40px; align-items: center; }
+        .string-name {
+            position: absolute; left: -35px; width: 30px; text-align: right;
+            font-weight: bold; font-size: 18px; color: var(--text-muted);
+        }
+        .string-line { position: absolute; left: 0; right: 0; background: var(--string-color); z-index: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .string-row:nth-child(1) .string-line { height: 2px; } /* G */
+        .string-row:nth-child(2) .string-line { height: 3px; } /* D */
+        .string-row:nth-child(3) .string-line { height: 4px; } /* A */
+        .string-row:nth-child(4) .string-line { height: 5px; } /* E */
+        
+        .fret {
+            height: 100%; border-right: 3px solid var(--fret-wire); position: relative;
+            display: flex; justify-content: center; align-items: center; z-index: 2;
+        }
+        /* Open string is Fret 0, shorter width */
+        .fret-0 { width: 40px; border-right: 6px solid #d4c4a8; background: rgba(0,0,0,0.2); }
+        .fret-normal { width: 70px; }
+        
+        .note-marker {
+            width: 30px; height: 30px; border-radius: 50%; background: #fff; color: #000;
+            display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 14px;
+            cursor: pointer; opacity: 0; transition: all 0.2s; position: absolute; z-index: 10;
+        }
+        
+        /* Game States */
+        .gaming .note-marker { opacity: 0; width: 100%; height: 100%; border-radius: 0; background: transparent; }
+        .gaming .note-marker:hover { background: rgba(255,255,255,0.2); opacity: 1; }
+        .gaming .note-marker.correct-guess { opacity: 1; background: var(--success); color: #000; border-radius: 50%; width: 30px; height: 30px; box-shadow: 0 0 15px var(--success); }
+        .gaming .note-marker.wrong-guess { opacity: 1; background: var(--danger); color: #fff; border-radius: 50%; width: 30px; height: 30px; }
+        .gaming .note-marker.show-correct { opacity: 1; background: var(--success); color: #000; border-radius: 50%; width: 30px; height: 30px; border: 2px solid #fff; }
+
+        /* Learning Mode */
+        .learning .note-marker { opacity: 1; background: #333; color: #fff; }
+        .learning .note-marker:hover { transform: scale(1.2); background: var(--primary); color: #000; }
+
+        /* Fret numbers & Dots */
+        .fret-indicators { display: flex; padding-left: 40px; height: 30px; margin-bottom: 5px; }
+        .fret-num { width: 70px; text-align: center; color: var(--text-muted); font-size: 12px; }
+        .fret-num-0 { width: 40px; }
+        .dot { position: absolute; width: 12px; height: 12px; background: rgba(255,255,255,0.4); border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 0; }
+        .string-row:nth-child(2) .dot { top: 100%; } /* Center dots between D and A strings */
+        .string-row:nth-child(1) .dot-double-1 { top: 100%; margin-top: -15px; }
+        .string-row:nth-child(3) .dot-double-2 { top: 0%; margin-top: 15px; }
+
+        /* Feedback overlay */
+        #feedback-box {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.9); padding: 20px 40px; border-radius: 12px;
+            text-align: center; display: none; z-index: 100; border: 2px solid #333;
+        }
+        #feedback-box h3 { font-size: 24px; margin-bottom: 10px; }
+        .feedback-correct { color: var(--success); }
+        .feedback-wrong { color: var(--danger); }
+
+        /* Progress bars for stats */
+        .stat-row { display: flex; align-items: center; margin: 10px 0; width: 100%; }
+        .stat-label { width: 30px; font-weight: bold; }
+        .stat-bar-bg { flex: 1; height: 15px; background: #333; border-radius: 8px; margin: 0 15px; overflow: hidden; }
+        .stat-bar-fill { height: 100%; background: var(--primary); width: 0%; }
+        .stat-pct { width: 40px; text-align: right; font-size: 14px; }
+        
+        .weak-note { color: var(--danger); font-weight: bold; }
+
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo">🎸 BASS NOTE RUSH</div>
+        <div class="nav-links">
+            <button onclick="App.nav('setup')" id="nav-setup" class="active">Play</button>
+            <button onclick="App.nav('learn')" id="nav-learn">Learn</button>
+            <button onclick="App.nav('stats')" id="nav-stats">Progress</button>
+        </div>
+    </nav>
+
+    <!-- SETUP VIEW -->
+    <div id="view-setup" class="view active">
+        <h1>Train your eyes. Play faster.</h1>
+        <div class="panel">
+            <h2>Game Mode</h2>
+            <div class="options-group" id="opt-mode">
+                <button class="opt-btn selected" data-val="find-note">Find The Note</button>
+                <button class="opt-btn" data-val="note-rush">Note Rush (Continuous)</button>
+            </div>
+
+            <h2>Difficulty</h2>
+            <div class="options-group" id="opt-diff">
+                <button class="opt-btn selected" data-val="beginner">Beginner (Fret 0-5, Naturals)</button>
+                <button class="opt-btn" data-val="easy">Easy (Fret 0-12, Naturals)</button>
+                <button class="opt-btn" data-val="medium">Medium (All Notes)</button>
+            </div>
+
+            <h2>Time</h2>
+            <div class="options-group" id="opt-time">
+                <button class="opt-btn" data-val="10">10s</button>
+                <button class="opt-btn selected" data-val="30">30s</button>
+                <button class="opt-btn" data-val="60">60s</button>
+            </div>
+
+            <div style="margin-top: 30px;">
+                <button class="btn" onclick="Game.start()">START GAME</button>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <label style="cursor:pointer;"><input type="checkbox" id="sound-toggle" checked> Sound Effects (Web Audio)</label>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAME VIEW -->
+    <div id="view-game" class="view">
+        <div class="game-header">
+            <div class="stat-box">
+                <div>SCORE</div>
+                <div class="stat-val" id="ui-score">0</div>
+            </div>
+            <div class="question-box">
+                <div class="question-label" id="ui-prompt-text">FIND THE NOTE</div>
+                <div class="target-note" id="ui-target-note">C</div>
+            </div>
+            <div class="stat-box">
+                <div>COMBO</div>
+                <div class="stat-val" id="ui-combo" style="color:var(--primary)">x1</div>
+            </div>
+        </div>
+        
+        <div class="timer-container">
+            <div class="timer-bar" id="ui-timer-bar"></div>
+        </div>
+        <div style="text-align: right; width: 100%; max-width: 800px; margin-top: -25px; margin-bottom: 10px; font-family: monospace;" id="ui-timer-text">30.0s</div>
+
+        <div class="fretboard-wrapper">
+            <div id="game-fretboard-container"></div>
+        </div>
+        
+        <button class="btn btn-outline" style="margin-top: 20px;" onclick="Game.end()">End Game</button>
+    </div>
+
+    <!-- RESULT VIEW -->
+    <div id="view-result" class="view">
+        <h1 id="result-title">TIME'S UP!</h1>
+        <div class="panel">
+            <div style="font-size: 48px; font-weight: bold; color: var(--primary); margin-bottom: 20px;" id="res-score">0</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left; margin-bottom: 20px;">
+                <div>Accuracy: <strong id="res-acc" style="color:var(--success)">0%</strong></div>
+                <div>Best Combo: <strong id="res-combo">0</strong></div>
+                <div>Correct: <strong id="res-correct" style="color:var(--success)">0</strong></div>
+                <div>Wrong: <strong id="res-wrong" style="color:var(--danger)">0</strong></div>
+            </div>
+            <hr style="border-color: #333; margin: 20px 0;">
+            <div id="res-weak"></div>
+            
+            <div style="margin-top: 30px;">
+                <button class="btn" onclick="App.nav('setup')">PLAY AGAIN</button>
+                <button class="btn btn-outline" onclick="App.nav('stats')">VIEW PROGRESS</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LEARN VIEW -->
+    <div id="view-learn" class="view">
+        <h1>Fretboard Explorer</h1>
+        <p style="color: var(--text-muted); margin-bottom: 20px;">Click any fret to see its note, or toggle all notes.</p>
+        
+        <div class="options-group">
+            <button class="opt-btn" onclick="FretboardApp.toggleAllNotes()" id="btn-toggle-notes">Show All Notes</button>
+            <button class="opt-btn" onclick="FretboardApp.setAccidentals('sharp')" id="btn-acc-sharp" class="selected">Use #</button>
+            <button class="opt-btn" onclick="FretboardApp.setAccidentals('flat')" id="btn-acc-flat">Use b</button>
+        </div>
+
+        <div class="fretboard-wrapper">
+            <div id="learn-fretboard-container"></div>
+        </div>
+        
+        <div class="panel" id="learn-info" style="margin-top: 30px; display: none;">
+            <h2>Note Info</h2>
+            <div style="font-size: 48px; font-weight: bold; color: var(--primary);" id="learn-note-display">C</div>
+            <div id="learn-pos-display" style="color: var(--text-muted); font-size: 18px;">A String / Fret 3</div>
+        </div>
+    </div>
+
+    <!-- STATS VIEW -->
+    <div id="view-stats" class="view">
+        <h1>Your Progress</h1>
+        <div class="panel">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
+                <div>
+                    <div style="color:var(--text-muted)">Total Score</div>
+                    <div style="font-size:24px; font-weight:bold; color:var(--primary)" id="stat-tot-score">0</div>
+                </div>
+                <div>
+                    <div style="color:var(--text-muted)">Questions Answered</div>
+                    <div style="font-size:24px; font-weight:bold; color:var(--primary)" id="stat-tot-q">0</div>
+                </div>
+                <div>
+                    <div style="color:var(--text-muted)">Overall Accuracy</div>
+                    <div style="font-size:24px; font-weight:bold; color:var(--primary)" id="stat-tot-acc">0%</div>
+                </div>
+            </div>
+
+            <h3 style="text-align: left; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 5px;">Note Accuracy</h3>
+            <div id="stats-bars"></div>
+            
+            <button class="btn btn-outline" style="margin-top: 30px; font-size: 14px;" onclick="Stats.reset()">Reset Stats</button>
+        </div>
+    </div>
+
+    <!-- Feedback Overlay -->
+    <div id="feedback-box">
+        <h3 id="fb-title" class="feedback-correct">✓ CORRECT!</h3>
+        <p id="fb-desc">Base +100 | Speed +40 | Combo +20</p>
+        <button id="fb-next-btn" class="btn" style="margin-top: 15px; display: none;" onclick="Game.nextQuestion()">Next Note</button>
+    </div>
+
+    <script>
+        // --- DATA & CONSTANTS ---
+        const ALL_NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        const ALL_NOTES_FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+        const NATURAL_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+        
+        // Tuning: standard E A D G (indices mapping to ALL_NOTES array where C=0)
+        // G=7, D=2, A=9, E=4
+        const STRINGS = [
+            { name: 'G', startNote: 7 },
+            { name: 'D', startNote: 2 },
+            { name: 'A', startNote: 9 },
+            { name: 'E', startNote: 4 }
+        ];
+        
+        const FRET_COUNT = 12;
+
+        // --- AUDIO SYSTEM (Web Audio API) ---
+        const AudioSys = {
+            ctx: null,
+            init() {
+                if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            },
+            play(type) {
+                if(!document.getElementById('sound-toggle').checked) return;
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                
+                if (type === 'correct') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+                    osc.start(); osc.stop(this.ctx.currentTime + 0.2);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.2);
+                    gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+                    osc.start(); osc.stop(this.ctx.currentTime + 0.3);
+                } else if (type === 'end') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(200, this.ctx.currentTime + 0.5);
+                    gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
+                    osc.start(); osc.stop(this.ctx.currentTime + 0.5);
+                }
+            }
+        };
+
+        // --- STATS / STORAGE ---
+        const Stats = {
+            data: { totalScore: 0, totalQuestions: 0, correct: 0, noteStats: {} },
+            load() {
+                const saved = localStorage.getItem('bassStats');
+                if (saved) this.data = JSON.parse(saved);
+                ALL_NOTES.forEach(n => {
+                    if (!this.data.noteStats[n]) this.data.noteStats[n] = { asked: 0, correct: 0 };
+                });
+            },
+            save() { localStorage.setItem('bassStats', JSON.stringify(this.data)); },
+            record(note, isCorrect, score) {
+                this.data.totalQuestions++;
+                if (isCorrect) this.data.correct++;
+                this.data.totalScore += score;
+                // Normalize flat names to sharps for storage simplicity
+                let n = note.replace('Db','C#').replace('Eb','D#').replace('Gb','F#').replace('Ab','G#').replace('Bb','A#');
+                if(this.data.noteStats[n]) {
+                    this.data.noteStats[n].asked++;
+                    if(isCorrect) this.data.noteStats[n].correct++;
+                }
+                this.save();
+            },
+            reset() {
+                localStorage.removeItem('bassStats');
+                this.data = { totalScore: 0, totalQuestions: 0, correct: 0, noteStats: {} };
+                this.load(); App.renderStats();
+            }
+        };
+
+        // --- FRETBOARD COMPONENT ---
+        const FretboardApp = {
+            useFlat: false,
+            showAll: false,
+            getNoteName(stringIdx, fret) {
+                const noteIdx = (STRINGS[stringIdx].startNote + fret) % 12;
+                return this.useFlat ? ALL_NOTES_FLAT[noteIdx] : ALL_NOTES[noteIdx];
+            },
+            buildHTML(mode, maxFret = FRET_COUNT) {
+                let html = `<div class="fret-indicators"><div class="fret-num fret-num-0">0</div>`;
+                for(let i=1; i<=maxFret; i++) html += `<div class="fret-num">${i}</div>`;
+                html += `</div><div class="fretboard ${mode}">`;
+                
+                for(let s=0; s<STRINGS.length; s++) {
+                    html += `<div class="string-row">
+                                <div class="string-name">${STRINGS[s].name}</div>
+                                <div class="string-line"></div>`;
+                    
+                    for(let f=0; f<=maxFret; f++) {
+                        let note = this.getNoteName(s, f);
+                        let fretClass = f === 0 ? 'fret-0' : 'fret-normal';
+                        html += `<div class="fret ${fretClass}">`;
+                        
+                        // Dots
+                        if (s === 1 && [3,5,7,9].includes(f)) html += `<div class="dot"></div>`;
+                        if (f === 12 && s === 0) html += `<div class="dot dot-double-1"></div>`;
+                        if (f === 12 && s === 2) html += `<div class="dot dot-double-2"></div>`;
+                        
+                        // Note Marker (Button)
+                        html += `<div class="note-marker" id="${mode}-note-${s}-${f}" 
+                                      data-s="${s}" data-f="${f}" data-note="${note}"
+                                      onclick="${mode === 'gaming' ? 'Game.checkAnswer' : 'FretboardApp.clickLearn'}(${s}, ${f})">
+                                    <span class="note-text">${note}</span>
+                                 </div>`;
+                        html += `</div>`;
+                    }
+                    html += `</div>`;
+                }
+                html += `</div>`;
+                return html;
+            },
+            render(containerId, mode, maxFret = FRET_COUNT) {
+                document.getElementById(containerId).innerHTML = this.buildHTML(mode, maxFret);
+                if (mode === 'learning') this.updateLearningView();
+            },
+            setAccidentals(type) {
+                this.useFlat = (type === 'flat');
+                document.getElementById('btn-acc-sharp').classList.toggle('selected', !this.useFlat);
+                document.getElementById('btn-acc-flat').classList.toggle('selected', this.useFlat);
+                this.render('learn-fretboard-container', 'learning');
+            },
+            toggleAllNotes() {
+                this.showAll = !this.showAll;
+                document.getElementById('btn-toggle-notes').innerText = this.showAll ? "Hide Notes" : "Show All Notes";
+                this.updateLearningView();
+            },
+            updateLearningView() {
+                const markers = document.querySelectorAll('#learn-fretboard-container .note-marker');
+                markers.forEach(m => {
+                    if(this.showAll) {
+                        m.style.opacity = '1';
+                        m.style.background = '#333';
+                        m.style.color = '#fff';
+                    } else {
+                        m.style.opacity = '';
+                        m.style.background = '';
+                        m.style.color = '';
+                    }
+                });
+            },
+            clickLearn(s, f) {
+                const note = this.getNoteName(s, f);
+                document.getElementById('learn-info').style.display = 'block';
+                document.getElementById('learn-note-display').innerText = note;
+                document.getElementById('learn-pos-display').innerText = `${STRINGS[s].name} String / Fret ${f}`;
+                
+                // Highlight just this one if not showing all
+                if(!this.showAll) {
+                    document.querySelectorAll('#learn-fretboard-container .note-marker').forEach(m => {
+                         m.style.opacity = ''; m.style.background = '';
+                    });
+                    const marker = document.getElementById(`learning-note-${s}-${f}`);
+                    marker.style.opacity = '1';
+                    marker.style.background = 'var(--primary)';
+                    marker.style.color = '#000';
+                }
+            }
+        };
+
+        // --- GAME LOGIC ---
+        const Game = {
+            mode: 'find-note',
+            diff: 'beginner',
+            timeTotal: 30,
+            timeLeft: 30,
+            timerId: null,
+            score: 0,
+            combo: 0,
+            maxCombo: 0,
+            correctCount: 0,
+            wrongCount: 0,
+            currentNote: '',
+            waitingForNext: false,
+            maxFret: 5,
+            availableNotes: [],
+
+            start() {
+                // Get config
+                this.mode = document.querySelector('#opt-mode .selected').dataset.val;
+                this.diff = document.querySelector('#opt-diff .selected').dataset.val;
+                this.timeTotal = parseInt(document.querySelector('#opt-time .selected').dataset.val);
+                
+                // Set Difficulty Rules
+                if (this.diff === 'beginner') { this.maxFret = 5; this.availableNotes = [...NATURAL_NOTES]; }
+                else if (this.diff === 'easy') { this.maxFret = 12; this.availableNotes = [...NATURAL_NOTES]; }
+                else { this.maxFret = 12; this.availableNotes = [...ALL_NOTES]; }
+
+                // Reset State
+                this.score = 0; this.combo = 0; this.maxCombo = 0;
+                this.correctCount = 0; this.wrongCount = 0;
+                this.timeLeft = this.timeTotal;
+                this.waitingForNext = false;
+                
+                this.updateUI();
+                FretboardApp.render('game-fretboard-container', 'gaming', this.maxFret);
+                App.nav('game');
+                
+                document.getElementById('feedback-box').style.display = 'none';
+                this.nextQuestion();
+                
+                clearInterval(this.timerId);
+                this.timerId = setInterval(() => this.tick(), 100);
+            },
+            
+            tick() {
+                if(this.waitingForNext && this.mode !== 'note-rush') return; // Pause timer when showing feedback in standard mode
+                
+                this.timeLeft -= 0.1;
+                if (this.timeLeft <= 0) {
+                    this.timeLeft = 0;
+                    this.end();
+                }
+                
+                const pct = (this.timeLeft / this.timeTotal) * 100;
+                const bar = document.getElementById('ui-timer-bar');
+                bar.style.width = pct + '%';
+                if (pct < 25) bar.classList.add('warning');
+                else bar.classList.remove('warning');
+                
+                document.getElementById('ui-timer-text').innerText = this.timeLeft.toFixed(1) + 's';
+            },
+
+            nextQuestion() {
+                this.waitingForNext = false;
+                document.getElementById('feedback-box').style.display = 'none';
+                
+                // Clear highlights
+                document.querySelectorAll('.gaming .note-marker').forEach(m => {
+                    m.className = 'note-marker';
+                });
+
+                // Pick random note
+                let newNote = this.currentNote;
+                while(newNote === this.currentNote) {
+                    newNote = this.availableNotes[Math.floor(Math.random() * this.availableNotes.length)];
+                }
+                this.currentNote = newNote;
+                document.getElementById('ui-target-note').innerText = this.currentNote;
+            },
+
+            checkAnswer(s, f) {
+                if (this.waitingForNext) return;
+                
+                const clickedNote = FretboardApp.getNoteName(s, f);
+                const isCorrect = (clickedNote === this.currentNote);
+                const marker = document.getElementById(`gaming-note-${s}-${f}`);
+                
+                const fbBox = document.getElementById('feedback-box');
+                const fbTitle = document.getElementById('fb-title');
+                const fbDesc = document.getElementById('fb-desc');
+                const fbNext = document.getElementById('fb-next-btn');
+                
+                if (isCorrect) {
+                    AudioSys.play('correct');
+                    marker.classList.add('correct-guess');
+                    
+                    this.correctCount++;
+                    this.combo++;
+                    if(this.combo > this.maxCombo) this.maxCombo = this.combo;
+                    
+                    let base = 100;
+                    let speedBon = Math.floor(this.timeLeft * 2);
+                    let comboBon = this.combo * 10;
+                    let gained = base + speedBon + comboBon;
+                    this.score += gained;
+                    
+                    fbTitle.innerText = '✓ CORRECT!';
+                    fbTitle.className = 'feedback-correct';
+                    fbDesc.innerText = `+${gained} (Base 100 + Speed ${speedBon} + Combo ${comboBon})`;
+                    fbNext.style.display = 'none';
+                    fbBox.style.display = 'block';
+                    
+                    Stats.record(this.currentNote, true, gained);
+                    
+                    if (this.mode === 'note-rush') {
+                        setTimeout(() => { if(!this.waitingForNext) this.nextQuestion(); }, 500);
+                    } else {
+                        this.waitingForNext = true;
+                        setTimeout(() => this.nextQuestion(), 1000);
+                    }
+                } else {
+                    AudioSys.play('wrong');
+                    marker.classList.add('wrong-guess');
+                    this.wrongCount++;
+                    this.combo = 0;
+                    
+                    // Highlight correct answers
+                    document.querySelectorAll('.gaming .note-marker').forEach(m => {
+                        if(m.dataset.note === this.currentNote) {
+                            m.classList.add('show-correct');
+                        }
+                    });
+                    
+                    fbTitle.innerText = '✕ NOT QUITE';
+                    fbTitle.className = 'feedback-wrong';
+                    fbDesc.innerHTML = `You clicked <strong>${clickedNote}</strong> (${STRINGS[s].name} String / Fret ${f})<br>Look for the green outlines!`;
+                    fbNext.style.display = 'inline-block';
+                    fbBox.style.display = 'block';
+                    
+                    Stats.record(this.currentNote, false, 0);
+                    this.waitingForNext = true; // Wait for user to click "Next"
+                }
+                this.updateUI();
+            },
+
+            updateUI() {
+                document.getElementById('ui-score').innerText = this.score;
+                document.getElementById('ui-combo').innerText = 'x' + this.combo;
+                if(this.combo === 0) document.getElementById('ui-combo').style.color = 'var(--text-muted)';
+                else document.getElementById('ui-combo').style.color = 'var(--primary)';
+            },
+
+            end() {
+                clearInterval(this.timerId);
+                AudioSys.play('end');
+                document.getElementById('feedback-box').style.display = 'none';
+                
+                let acc = this.correctCount + this.wrongCount > 0 
+                          ? Math.round((this.correctCount / (this.correctCount + this.wrongCount)) * 100) 
+                          : 0;
+                
+                document.getElementById('res-score').innerText = this.score;
+                document.getElementById('res-acc').innerText = acc + '%';
+                document.getElementById('res-combo').innerText = this.maxCombo;
+                document.getElementById('res-correct').innerText = this.correctCount;
+                document.getElementById('res-wrong').innerText = this.wrongCount;
+                
+                // Weak notes analysis for this session
+                // We'll just look at overall weak notes from stats to suggest practice
+                let weakArr = [];
+                for(let n in Stats.data.noteStats) {
+                    let st = Stats.data.noteStats[n];
+                    if(st.asked >= 3) {
+                        let noteAcc = st.correct / st.asked;
+                        if(noteAcc < 0.8) weakArr.push({note: n, acc: Math.round(noteAcc*100)});
+                    }
+                }
+                weakArr.sort((a,b) => a.acc - b.acc);
+                
+                let weakHtml = '<h3>Needs Practice:</h3>';
+                if(weakArr.length > 0) {
+                    weakHtml += `<p>Focus on finding these notes in Learn Mode:</p><br>`;
+                    weakArr.slice(0,3).forEach(w => {
+                        weakHtml += `<div class="stat-row"><span class="stat-label weak-note">${w.note}</span> <span>${w.acc}% accuracy</span></div>`;
+                    });
+                } else {
+                    weakHtml += `<p style="color:var(--success)">You're doing great! Keep it up to gather more data.</p>`;
+                }
+                document.getElementById('res-weak').innerHTML = weakHtml;
+                
+                App.nav('result');
+            }
+        };
+
+        // --- APP CONTROLLER ---
+        const App = {
+            init() {
+                Stats.load();
+                
+                // Option buttons logic
+                document.querySelectorAll('.opt-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const parent = this.parentElement;
+                        if(parent.id.startsWith('opt-')) {
+                            parent.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+                            this.classList.add('selected');
+                        }
+                    });
+                });
+                
+                FretboardApp.render('learn-fretboard-container', 'learning');
+            },
+            
+            nav(viewId) {
+                document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                document.querySelectorAll('.nav-links button').forEach(b => b.classList.remove('active'));
+                
+                document.getElementById(`view-${viewId}`).classList.add('active');
+                let navBtn = document.getElementById(`nav-${viewId}`);
+                if(navBtn) navBtn.classList.add('active');
+                
+                if (viewId === 'stats') this.renderStats();
+            },
+            
+            renderStats() {
+                document.getElementById('stat-tot-score').innerText = Stats.data.totalScore.toLocaleString();
+                document.getElementById('stat-tot-q').innerText = Stats.data.totalQuestions.toLocaleString();
+                let acc = Stats.data.totalQuestions > 0 ? Math.round((Stats.data.correct / Stats.data.totalQuestions) * 100) : 0;
+                document.getElementById('stat-tot-acc').innerText = acc + '%';
+                
+                let barsHtml = '';
+                ALL_NOTES.forEach(n => {
+                    let st = Stats.data.noteStats[n];
+                    let pct = st && st.asked > 0 ? Math.round((st.correct / st.asked) * 100) : 0;
+                    let color = pct > 80 ? 'var(--success)' : (pct < 60 && st && st.asked > 0 ? 'var(--danger)' : 'var(--primary)');
+                    
+                    barsHtml += `
+                    <div class="stat-row">
+                        <div class="stat-label">${n}</div>
+                        <div class="stat-bar-bg">
+                            <div class="stat-bar-fill" style="width: ${pct}%; background-color: ${color}"></div>
+                        </div>
+                        <div class="stat-pct" style="color: ${color}">${st && st.asked > 0 ? pct + '%' : '-'}</div>
+                    </div>`;
+                });
+                document.getElementById('stats-bars').innerHTML = barsHtml;
+            }
+        };
+
+        // Bootstrap
+        window.onload = () => App.init();
+
+    </script>
+</body>
+</html>

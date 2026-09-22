@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHORD//VISION — Interactive Ear Training</title>
+<style>
+:root{
+  --bg:#08090d; --panel:#11131a; --panel2:#171a22; --line:#2a2e39;
+  --text:#f4f5f7; --muted:#8d93a1; --accent:#b9ff3d; --danger:#ff5c7a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 75% 10%,#1d2430 0,#0b0d12 38%,#08090d 70%);
+font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);min-height:100vh}
+.wrap{max-width:1100px;margin:auto;padding:28px 20px 50px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid var(--line);padding-bottom:18px}
+.brand{letter-spacing:.18em;font-weight:800;font-size:20px}.brand span{color:var(--accent)}
+.tag{font-size:11px;color:var(--muted);letter-spacing:.16em;text-transform:uppercase}
+h1{font-size:clamp(38px,7vw,78px);line-height:.9;margin:42px 0 14px;letter-spacing:-.06em}
+.sub{max-width:650px;color:#b8bdc8;font-size:15px;line-height:1.7}
+.grid{display:grid;grid-template-columns:1.35fr .65fr;gap:18px;margin-top:28px}
+.card{background:rgba(17,19,26,.82);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 16px 50px rgba(0,0,0,.2)}
+.card h2{margin:0 0 6px;font-size:13px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+.big{font-size:34px;font-weight:800;margin:4px 0 18px}
+.status{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
+.pill{border:1px solid var(--line);padding:7px 10px;border-radius:999px;font-size:11px;color:var(--muted)}
+.pill.live{color:var(--accent);border-color:#55751f}
+.piano{height:190px;display:flex;position:relative;overflow:hidden;border-radius:12px;background:#0a0b0f;border:1px solid #30343e}
+.key{flex:1;background:linear-gradient(#fafafa,#cfd2d7);border-right:1px solid #747984;position:relative;cursor:pointer;transition:.08s;display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;color:#20222a;font-size:11px;font-weight:700}
+.key:active,.key.hit{background:linear-gradient(#dfff9c,#b9ff3d);transform:translateY(2px)}
+.key.black{position:absolute;z-index:2;width:8.5%;height:112px;top:0;background:linear-gradient(#292d35,#090a0d);border:1px solid #050507;border-radius:0 0 6px 6px;color:#aeb4bf}
+.controls{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:14px}
+button{font:inherit;border:1px solid var(--line);background:#171a22;color:var(--text);padding:12px 10px;border-radius:10px;cursor:pointer;transition:.15s}
+button:hover{border-color:#555d6c;transform:translateY(-1px)}
+button.primary{background:var(--accent);color:#0b0d0a;border-color:var(--accent);font-weight:800}
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px}
+.answer{font-size:14px;text-align:left}
+.answer small{display:block;color:var(--muted);margin-top:3px}
+.score{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.metric{background:var(--panel2);border:1px solid var(--line);padding:15px;border-radius:12px}
+.metric b{font-size:26px}.metric span{display:block;color:var(--muted);font-size:11px;margin-top:3px}
+.feedback{min-height:27px;margin-top:14px;font-weight:700}
+.good{color:var(--accent)}.bad{color:var(--danger)}
+.note{font-size:13px;line-height:1.7;color:#aeb4bf}
+.progress{height:5px;background:#252934;border-radius:99px;overflow:hidden;margin-top:14px}
+.bar{height:100%;width:0;background:var(--accent);transition:.3s}
+footer{margin-top:20px;color:#666d7a;font-size:11px;letter-spacing:.08em}
+@media(max-width:800px){.grid{grid-template-columns:1fr}.controls{grid-template-columns:1fr 1fr}.piano{height:150px}.key.black{height:88px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand">CHORD<span>//</span>VISION</div>
+    <div class="tag">Interactive Music Learning Lab</div>
+  </div>
+
+  <h1>TRAIN<br>YOUR EAR.</h1>
+  <div class="sub">
+    เกมฝึกฟังชนิดของคอร์ดสำหรับนักเรียนดนตรี —
+    ฟังเสียงก่อน แล้วตัดสินใจว่าเป็น <b>Major, Minor หรือ Dominant 7</b>
+    พร้อมเห็นโน้ตที่ประกอบคอร์ดบนคีย์บอร์ดหลังเฉลย
+  </div>
+
+  <div class="grid">
+    <section class="card">
+      <div class="status">
+        <div>
+          <h2>Round</h2>
+          <div class="big" id="round">01 / 10</div>
+        </div>
+        <div class="pill live" id="state">READY</div>
+      </div>
+
+      <h2>Listen</h2>
+      <div class="controls">
+        <button class="primary" id="play">▶ PLAY CHORD</button>
+        <button id="replay">↻ REPLAY</button>
+        <button id="next">NEXT →</button>
+        <button id="reset">RESET</button>
+      </div>
+
+      <div class="feedback" id="feedback"></div>
+
+      <h2>Answer</h2>
+      <div class="answers">
+        <button class="answer" data-type="Major">MAJOR <small>สด / มั่นคง</small></button>
+        <button class="answer" data-type="Minor">MINOR <small>หม่น / เศร้า</small></button>
+        <button class="answer" data-type="Dominant 7">DOMINANT 7 <small>ตึง / อยากไปต่อ</small></button>
+        <button class="answer" data-type="Sus4">SUS4 <small>ค้าง / ยังไม่เฉลย</small></button>
+      </div>
+
+      <div class="progress"><div class="bar" id="bar"></div></div>
+    </section>
+
+    <aside class="card">
+      <h2>After Answer</h2>
+      <div class="big" id="chordName">—</div>
+      <div class="note" id="explain">
+        เมื่อกดคำตอบ ระบบจะแสดงโน้ตของคอร์ด
+        และให้ลองกดคีย์เพื่อฟังทีละเสียง
+      </div>
+      <div class="score">
+        <div class="metric"><b id="score">0</b><span>SCORE</span></div>
+        <div class="metric"><b id="streak">0</b><span>STREAK</span></div>
+      </div>
+      <h2 style="margin-top:20px">Visualize</h2>
+      <div class="piano" id="piano"></div>
+      <div class="note" style="margin-top:12px">
+        ลองกดคีย์ด้วยตัวเองเพื่อฟังความสัมพันธ์ของโน้ต
+        หลังจากเฉลยแล้ว
+      </div>
+    </aside>
+  </div>
+
+  <footer>HTML + CSS + JAVASCRIPT / NO EXTERNAL LIBRARIES</footer>
+</div>
+
+<script>
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+const base = 261.63; // C4
+const noteNames = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+
+const types = {
+  "Major": {intervals:[0,4,7], text:"Major = เสียงที่มี major 3rd ให้ความรู้สึกสว่างและมั่นคง"},
+  "Minor": {intervals:[0,3,7], text:"Minor = เสียงที่มี minor 3rd ให้ความรู้สึกหม่นและเศร้ากว่า Major"},
+  "Dominant 7": {intervals:[0,4,7,10], text:"Dominant 7 = มี tritone เพิ่มความตึง และมักให้ความรู้สึกอยากคลี่คลาย"},
+  "Sus4": {intervals:[0,5,7], text:"Sus4 = ไม่มี 3rd แต่ใช้ perfect 4th ทำให้เสียงรู้สึกค้างและยังไม่เฉลย"}
+};
+
+const roots = [0,2,4,5,7,9,11];
+let round=0, score=0, streak=0, answered=false, current=null;
+
+function freq(semi){return base*Math.pow(2,semi/12)}
+function tone(semi,duration=.8,when=audioCtx.currentTime,volume=.13){
+  const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+  o.type="sine"; o.frequency.value=freq(semi);
+  g.gain.setValueAtTime(0,when);
+  g.gain.linearRampToValueAtTime(volume,when+.02);
+  g.gain.exponentialRampToValueAtTime(.001,when+duration);
+  o.connect(g).connect(audioCtx.destination); o.start(when); o.stop(when+duration+.03);
+}
+function playChord(){
+  audioCtx.resume();
+  if(!current)return;
+  current.intervals.forEach((n,i)=>tone(current.root+n,.95,audioCtx.currentTime+i*.035,.11));
+}
+function newRound(){
+  if(round>=10){endGame();return}
+  round++; answered=false;
+  const keys=Object.keys(types);
+  const type=keys[Math.floor(Math.random()*keys.length)];
+  const root=roots[Math.floor(Math.random()*roots.length)];
+  current={type,root,intervals:types[type].intervals};
+  document.getElementById("round").textContent=String(round).padStart(2,"0")+" / 10";
+  document.getElementById("state").textContent="LISTEN";
+  document.getElementById("feedback").textContent="";
+  document.getElementById("chordName").textContent="—";
+  document.getElementById("explain").textContent="ฟังเสียงแล้วเลือกคำตอบที่คิดว่าถูก";
+  document.getElementById("bar").style.width=((round-1)/10*100)+"%";
+  clearPiano();
+  setTimeout(playChord,250);
+}
+function answer(type){
+  if(!current || answered)return;
+  answered=true;
+  const correct=type===current.type;
+  if(correct){score+=10;streak++; document.getElementById("feedback").innerHTML='<span class="good">✓ CORRECT</span>'}
+  else {streak=0;document.getElementById("feedback").innerHTML='<span class="bad">✕ NOT QUITE — '+current.type+'</span>'}
+  document.getElementById("score").textContent=score;
+  document.getElementById("streak").textContent=streak;
+  const rootName=noteNames[current.root];
+  document.getElementById("chordName").textContent=rootName+" "+current.type;
+  document.getElementById("explain").textContent=types[current.type].text;
+  showPiano();
+}
+function showPiano(){
+  clearPiano();
+  current.intervals.forEach(n=>{
+    const key=document.querySelector('[data-semi="'+((current.root+n)%12)+'"]');
+    if(key)key.classList.add("hit");
+  });
+}
+function clearPiano(){
+  document.querySelectorAll(".key").forEach(k=>k.classList.remove("hit"));
+}
+function endGame(){
+  document.getElementById("state").textContent="COMPLETE";
+  document.getElementById("round").textContent="DONE";
+  document.getElementById("feedback").innerHTML='<span class="good">SESSION COMPLETE — '+score+'/100</span>';
+  document.getElementById("bar").style.width="100%";
+}
+function reset(){round=0;score=0;streak=0;document.getElementById("score").textContent=0;document.getElementById("streak").textContent=0;newRound()}
+
+const piano=document.getElementById("piano");
+for(let i=0;i<12;i++){
+  const k=document.createElement("div"); k.className="key"; k.dataset.semi=i; k.textContent=noteNames[i];
+  k.onclick=()=>tone(i,.55,audioCtx.currentTime,.18); piano.appendChild(k);
+}
+[1,3,6,8,10].forEach(i=>{
+  const k=document.createElement("div"); k.className="key black"; k.dataset.semi=i;
+  k.style.left=(i*8.333-3.8)+"%"; k.textContent=noteNames[i];
+  k.onclick=(e)=>{e.stopPropagation();tone(i,.55,audioCtx.currentTime,.18)}; piano.appendChild(k);
+});
+
+document.getElementById("play").onclick=playChord;
+document.getElementById("replay").onclick=playChord;
+document.getElementById("next").onclick=()=>{if(answered)newRound()};
+document.getElementById("reset").onclick=reset;
+document.querySelectorAll(".answer").forEach(b=>b.onclick=()=>answer(b.dataset.type));
+newRound();
+</script>
+</body>
+</html>

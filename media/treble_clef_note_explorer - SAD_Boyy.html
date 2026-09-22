@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Treble Clef Note Explorer</title>
+
+  <style>
+    /* =========================
+       Base / Theme
+       ========================= */
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --text: #172033;
+      --muted: #64748b;
+      --line: #273449;
+      --accent: #2f80ed;
+      --accent-2: #1fb97a;
+      --accent-soft: #e9f2ff;
+      --border: #e2e8f0;
+      --shadow: 0 14px 40px rgba(31, 41, 55, 0.08);
+      --radius: 20px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", "Noto Sans Thai", Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(47, 128, 237, 0.08), transparent 34%),
+        radial-gradient(circle at top right, rgba(31, 185, 122, 0.07), transparent 30%),
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .container {
+      width: min(1160px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 34px 0 50px;
+    }
+
+    .hero {
+      background: var(--card);
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      padding: clamp(22px, 4vw, 42px);
+      margin-bottom: 22px;
+      animation: rise 0.55s ease both;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 0.82rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(2rem, 4vw, 3.3rem);
+      line-height: 1.05;
+      letter-spacing: -0.035em;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 900px;
+      color: var(--muted);
+      font-size: 1.02rem;
+      line-height: 1.7;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(226, 232, 240, 0.95);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px;
+      margin-bottom: 22px;
+      animation: rise 0.6s ease both;
+    }
+
+    .section-title {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 15px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 1.2rem;
+      letter-spacing: -0.015em;
+    }
+
+    .section-title span {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    /* =========================
+       Staff Area
+       ========================= */
+    .staff-shell {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background:
+        linear-gradient(rgba(255,255,255,0.92), rgba(255,255,255,0.92)),
+        repeating-linear-gradient(90deg, transparent 0, transparent 44px, rgba(100,116,139,0.025) 45px);
+      padding: clamp(10px, 2vw, 20px);
+    }
+
+    .staff-scroll {
+      width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding: 8px 0;
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      min-width: 760px;
+      height: auto;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    .staff-hit-zone {
+      cursor: crosshair;
+      fill: transparent;
+    }
+
+    .staff-hit-zone:hover {
+      fill: rgba(47, 128, 237, 0.035);
+    }
+
+    .staff-line {
+      stroke: var(--line);
+      stroke-width: 2.2;
+      stroke-linecap: round;
+    }
+
+    .clef {
+      fill: #172033;
+      font-family: "Times New Roman", serif;
+      font-size: 132px;
+      font-weight: 400;
+    }
+
+    .note-head {
+      fill: var(--accent);
+      stroke: white;
+      stroke-width: 2.5;
+      cursor: pointer;
+      transition: transform 0.16s ease, fill 0.16s ease;
+      transform-origin: center;
+    }
+
+    .note-head:hover {
+      fill: var(--accent-2);
+      transform: scale(1.08);
+    }
+
+    .note-head.selected {
+      fill: var(--accent-2);
+      filter: drop-shadow(0 5px 8px rgba(31, 185, 122, 0.24));
+    }
+
+    .note-stem {
+      stroke: var(--accent);
+      stroke-width: 2.8;
+      stroke-linecap: round;
+    }
+
+    .note-label {
+      font-size: 15px;
+      font-weight: 800;
+      fill: var(--text);
+      text-anchor: middle;
+      pointer-events: none;
+    }
+
+    .ledger {
+      stroke: var(--line);
+      stroke-width: 2.2;
+      stroke-linecap: round;
+    }
+
+    .tooltip {
+      position: fixed;
+      z-index: 50;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(5px);
+      padding: 9px 12px;
+      border-radius: 10px;
+      background: #111827;
+      color: #fff;
+      font-size: 0.85rem;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.18);
+      transition: opacity 0.14s ease, transform 0.14s ease;
+    }
+
+    .tooltip.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* =========================
+       Controls
+       ========================= */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 11px 15px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.14s ease, box-shadow 0.14s ease, opacity 0.14s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 7px 18px rgba(47, 128, 237, 0.2);
+    }
+
+    .btn-secondary {
+      background: #eef2f7;
+      color: var(--text);
+    }
+
+    .btn-green {
+      background: #e7f8f1;
+      color: #12875a;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+      transform: none;
+    }
+
+    /* =========================
+       Selected Note
+       ========================= */
+    .selected-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .stat {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      padding: 16px;
+    }
+
+    .stat .label {
+      color: var(--muted);
+      font-size: 0.84rem;
+      margin-bottom: 5px;
+    }
+
+    .stat .value {
+      font-size: 1.35rem;
+      font-weight: 900;
+      letter-spacing: -0.015em;
+    }
+
+    /* =========================
+       Table
+       ========================= */
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+    }
+
+    table {
+      width: 100%;
+      min-width: 650px;
+      border-collapse: collapse;
+      background: #fff;
+    }
+
+    th, td {
+      padding: 13px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background: #f8fafc;
+      font-size: 0.88rem;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    td {
+      font-size: 0.93rem;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .note-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 48px;
+      padding: 5px 9px;
+      border-radius: 9px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 900;
+    }
+
+    /* =========================
+       Memory Aids
+       ========================= */
+    .memory-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    .memory {
+      border-radius: 16px;
+      background: linear-gradient(135deg, #f8fafc, #ffffff);
+      border: 1px solid var(--border);
+      padding: 18px;
+    }
+
+    .memory h3 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+    }
+
+    .memory .sequence {
+      font-size: 1.35rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      margin-bottom: 5px;
+    }
+
+    .memory p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .tip {
+      margin-top: 14px;
+      padding: 13px 15px;
+      border-radius: 13px;
+      background: #f0f7ff;
+      color: #3b5575;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.84rem;
+      padding: 5px 0 0;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 760px) {
+      .container {
+        width: min(100% - 18px, 1160px);
+        padding-top: 16px;
+      }
+
+      .hero,
+      .card {
+        border-radius: 18px;
+      }
+
+      .hero {
+        padding: 22px 18px;
+      }
+
+      .card {
+        padding: 16px;
+      }
+
+      .selected-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .memory-grid {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 2.1rem;
+      }
+
+      .controls button {
+        flex: 1 1 calc(50% - 10px);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+
+    <!-- =========================
+         Header
+         ========================= -->
+    <section class="hero">
+      <div class="eyebrow">🎵 Music Education • Interactive Learning</div>
+      <h1>Treble Clef Note Explorer</h1>
+      <p>
+        กุญแจซอล (Treble Clef) ใช้สำหรับเครื่องดนตรีและเสียงร้องที่มีช่วงเสียงค่อนข้างสูง
+        โดยโน้ตบนบรรทัดและช่องมีตำแหน่งเฉพาะที่ต้องจดจำ
+      </p>
+    </section>
+
+    <!-- =========================
+         Staff Explorer
+         ========================= -->
+    <section class="card">
+      <div class="section-title">
+        <div>
+          <h2>ลองคลิกบนบรรทัด 5 เส้น</h2>
+          <span>ระบบจะ Snap ไปยังโน้ตที่ใกล้ที่สุดตั้งแต่ C4 ถึง A5</span>
+        </div>
+      </div>
+
+      <div class="staff-shell">
+        <div class="staff-scroll">
+          <svg id="staffSvg" viewBox="0 0 1000 340" role="img"
+               aria-label="Interactive treble clef staff">
+
+            <!-- Wide transparent clickable area -->
+            <rect
+              id="staffHitZone"
+              class="staff-hit-zone"
+              x="70" y="55" width="875" height="225"
+              rx="16">
+            </rect>
+
+            <!-- Staff lines -->
+            <g id="staffLines"></g>
+
+            <!-- Treble clef -->
+            <text x="84" y="202" class="clef">𝄞</text>
+
+            <!-- Notes rendered here -->
+            <g id="notesLayer"></g>
+
+            <!-- Helpful hint -->
+            <text x="500" y="322"
+                  text-anchor="middle"
+                  fill="#94a3b8"
+                  font-size="13">
+              คลิกบริเวณเส้น / ช่อง เพื่อเลือกโน้ต
+            </text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button id="playAgainBtn" class="btn-primary" disabled>▶ Play Again</button>
+        <button id="showAllBtn" class="btn-green">Show All Notes</button>
+        <button id="clearBtn" class="btn-secondary">Clear Notes</button>
+      </div>
+    </section>
+
+    <!-- =========================
+         Selected Note
+         ========================= -->
+    <section class="card">
+      <div class="section-title">
+        <h2>Selected Note</h2>
+        <span id="selectionHint">คลิกโน้ตบน Staff เพื่อเริ่มเรียนรู้</span>
+      </div>
+
+      <div class="selected-grid">
+        <div class="stat">
+          <div class="label">Note</div>
+          <div id="selectedNote" class="value">—</div>
+        </div>
+
+        <div class="stat">
+          <div class="label">Frequency</div>
+          <div id="selectedFreq" class="value">—</div>
+        </div>
+
+        <div class="stat">
+          <div class="label">Position</div>
+          <div id="selectedPosition" class="value">—</div>
+        </div>
+      </div>
+
+      <div class="tip">
+        💡 เคล็ดลับ: จำโน้ตบนเส้นด้วย <strong>E G B D F</strong> และโน้ตในช่องด้วย
+        <strong>F A C E</strong> แล้วค่อยไล่ขึ้นหรือลงทีละขั้น
+      </div>
+    </section>
+
+    <!-- =========================
+         Reference Table
+         ========================= -->
+    <section class="card">
+      <div class="section-title">
+        <h2>Note Reference Table</h2>
+        <span>Equal Temperament • A4 = 440 Hz</span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Note</th>
+              <th>Frequency</th>
+              <th>Location</th>
+            </tr>
+          </thead>
+          <tbody id="noteTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- =========================
+         Memory Aids
+         ========================= -->
+    <section class="card">
+      <div class="section-title">
+        <h2>Memory Aids</h2>
+        <span>ตัวช่วยจำตำแหน่งโน้ต</span>
+      </div>
+
+      <div class="memory-grid">
+        <div class="memory">
+          <h3>Notes on Lines</h3>
+          <div class="sequence">E G B D F</div>
+          <p>Every Good Boy Does Fine</p>
+        </div>
+
+        <div class="memory">
+          <h3>Notes in Spaces</h3>
+          <div class="sequence">F A C E</div>
+          <p>FACE</p>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      Treble Clef Note Explorer • HTML + CSS + Vanilla JavaScript + Web Audio API
+    </footer>
+  </main>
+
+  <div id="tooltip" class="tooltip"></div>
+
+  <script>
+    /* =========================================================
+       Treble Clef Note Explorer
+       Pure HTML + CSS + Vanilla JavaScript
+       Audio: Web Audio API
+       ========================================================= */
+
+    // ---------------------------------------------------------
+    // 1) Note data
+    // ---------------------------------------------------------
+    const NOTES = [
+      { name: "C4", freq: 261.63, step: -2 },
+      { name: "D4", freq: 293.66, step: -1 },
+      { name: "E4", freq: 329.63, step:  0 },
+      { name: "F4", freq: 349.23, step:  1 },
+      { name: "G4", freq: 392.00, step:  2 },
+      { name: "A4", freq: 440.00, step:  3 },
+      { name: "B4", freq: 493.88, step:  4 },
+      { name: "C5", freq: 523.25, step:  5 },
+      { name: "D5", freq: 587.33, step:  6 },
+      { name: "E5", freq: 659.25, step:  7 },
+      { name: "F5", freq: 698.46, step:  8 },
+      { name: "G5", freq: 783.99, step:  9 },
+      { name: "A5", freq: 880.00, step: 10 }
+    ];
+
+    // E4 = line 1, F4 = space 1, ... A5 = ledger line above.
+    const POSITION_INFO = {
+      C4: "Ledger Line",
+      D4: "Below Staff",
+      E4: "Line 1",
+      F4: "Space 1",
+      G4: "Line 2",
+      A4: "Space 2",
+      B4: "Line 3",
+      C5: "Space 3",
+      D5: "Line 4",
+      E5: "Space 4",
+      F5: "Line 5",
+      G5: "Space above",
+      A5: "Ledger Line"
+    };
+
+    // ---------------------------------------------------------
+    // 2) SVG / DOM references
+    // ---------------------------------------------------------
+    const svg = document.getElementById("staffSvg");
+    const hitZone = document.getElementById("staffHitZone");
+    const staffLines = document.getElementById("staffLines");
+    const notesLayer = document.getElementById("notesLayer");
+
+    const selectedNoteEl = document.getElementById("selectedNote");
+    const selectedFreqEl = document.getElementById("selectedFreq");
+    const selectedPositionEl = document.getElementById("selectedPosition");
+    const selectionHint = document.getElementById("selectionHint");
+    const playAgainBtn = document.getElementById("playAgainBtn");
+    const showAllBtn = document.getElementById("showAllBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const tooltip = document.getElementById("tooltip");
+    const tableBody = document.getElementById("noteTableBody");
+
+    // ---------------------------------------------------------
+    // 3) Staff geometry
+    // ---------------------------------------------------------
+    // Five lines: E4, G4, B4, D5, F5
+    const staffX1 = 170;
+    const staffX2 = 925;
+    const line1Y = 185;
+    const lineSpacing = 24;
+
+    // Each diatonic step = half a staff-space.
+    // E4 is step 0.
+    function yForStep(step) {
+      return line1Y - (step * (lineSpacing / 2));
+    }
+
+    function isLine(step) {
+      return step % 2 === 0;
+    }
+
+    // Draw the five staff lines.
+    for (let i = 0; i < 5; i++) {
+      const y = line1Y - i * lineSpacing;
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", staffX1);
+      line.setAttribute("x2", staffX2);
+      line.setAttribute("y1", y);
+      line.setAttribute("y2", y);
+      line.setAttribute("class", "staff-line");
+      staffLines.appendChild(line);
+    }
+
+    // ---------------------------------------------------------
+    // 4) SVG helpers
+    // ---------------------------------------------------------
+    function svgPointFromEvent(event) {
+      const point = svg.createSVGPoint();
+      point.x = event.clientX;
+      point.y = event.clientY;
+      return point.matrixTransform(svg.getScreenCTM().inverse());
+    }
+
+    function nearestNoteFromY(y) {
+      // Round to nearest diatonic half-space.
+      const rawStep = (line1Y - y) / (lineSpacing / 2);
+      let step = Math.round(rawStep);
+
+      step = Math.max(NOTES[0].step, Math.min(NOTES[NOTES.length - 1].step, step));
+
+      let note = NOTES.find(n => n.step === step);
+
+      // Safety fallback.
+      if (!note) {
+        note = NOTES.reduce((closest, candidate) =>
+          Math.abs(candidate.step - step) < Math.abs(closest.step - step)
+            ? candidate
+            : closest
+        );
+      }
+
+      return note;
+    }
+
+    function noteX(index) {
+      return 260 + index * 53;
+    }
+
+    // ---------------------------------------------------------
+    // 5) Note rendering
+    // ---------------------------------------------------------
+    function clearRenderedNotes() {
+      notesLayer.innerHTML = "";
+    }
+
+    function drawLedgerLines(note, x) {
+      const ledgerWidth = 44;
+      const ledgerGap = 7;
+
+      if (note.name === "C4") {
+        const y = yForStep(note.step);
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", x - ledgerWidth / 2);
+        line.setAttribute("x2", x + ledgerWidth / 2);
+        line.setAttribute("y1", y);
+        line.setAttribute("y2", y);
+        line.setAttribute("class", "ledger");
+        line.setAttribute("data-ledger", note.name);
+        notesLayer.appendChild(line);
+      }
+
+      // D4 sits below the bottom line but is not itself on a ledger line.
+      if (note.name === "D4") {
+        const y = yForStep(note.step + 0.0);
+        // No ledger line for D4 by itself.
+      }
+
+      if (note.name === "A5") {
+        const y = yForStep(note.step);
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", x - ledgerWidth / 2);
+        line.setAttribute("x2", x + ledgerWidth / 2);
+        line.setAttribute("y1", y);
+        line.setAttribute("y2", y);
+        line.setAttribute("class", "ledger");
+        line.setAttribute("data-ledger", note.name);
+        notesLayer.appendChild(line);
+      }
+    }
+
+    function drawNote(note, index, showLabel = false) {
+      const x = noteX(index);
+      const y = yForStep(note.step);
+
+      drawLedgerLines(note, x);
+
+      // Stem up for notes in this explorer to keep visuals simple.
+      const stem = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      stem.setAttribute("x1", x + 9);
+      stem.setAttribute("x2", x + 9);
+      stem.setAttribute("y1", y);
+      stem.setAttribute("y2", y - 42);
+      stem.setAttribute("class", "note-stem");
+      stem.setAttribute("pointer-events", "none");
+      notesLayer.appendChild(stem);
+
+      const ellipse = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+      ellipse.setAttribute("cx", x);
+      ellipse.setAttribute("cy", y);
+      ellipse.setAttribute("rx", 11);
+      ellipse.setAttribute("ry", 7.5);
+      ellipse.setAttribute("class", "note-head");
+      ellipse.setAttribute("tabindex", "0");
+      ellipse.setAttribute("role", "button");
+      ellipse.setAttribute("aria-label", `${note.name}, ${note.freq.toFixed(2)} Hz`);
+
+      ellipse.addEventListener("click", (event) => {
+        event.stopPropagation();
+        selectNote(note, ellipse);
+      });
+
+      ellipse.addEventListener("mouseenter", (event) => {
+        showTooltip(`${note.name}<br>${note.freq.toFixed(2)} Hz`, event.clientX, event.clientY);
+      });
+
+      ellipse.addEventListener("mousemove", (event) => {
+        moveTooltip(event.clientX, event.clientY);
+      });
+
+      ellipse.addEventListener("mouseleave", hideTooltip);
+
+      ellipse.addEventListener("focus", (event) => {
+        const rect = event.target.getBoundingClientRect();
+        showTooltip(`${note.name}<br>${note.freq.toFixed(2)} Hz`, rect.left + rect.width / 2, rect.top);
+      });
+
+      ellipse.addEventListener("blur", hideTooltip);
+
+      ellipse.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          selectNote(note, ellipse);
+        }
+      });
+
+      notesLayer.appendChild(ellipse);
+
+      if (showLabel) {
+        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        label.setAttribute("x", x);
+        label.setAttribute("y", y - 55);
+        label.setAttribute("class", "note-label");
+        label.textContent = note.name;
+        label.setAttribute("pointer-events", "none");
+        notesLayer.appendChild(label);
+      }
+    }
+
+    // ---------------------------------------------------------
+    // 6) Selected note state
+    // ---------------------------------------------------------
+    let selectedNote = null;
+    let audioContext = null;
+
+    function getAudioContext() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      return audioContext;
+    }
+
+    function playNote(freq) {
+      const ctx = getAudioContext();
+
+      // Browsers can suspend audio until a user interaction.
+      if (ctx.state === "suspended") {
+        ctx.resume();
+      }
+
+      const now = ctx.currentTime;
+      const duration = 1.0;
+
+      const oscillator = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(freq, now);
+
+      // Soft fade in/out.
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.22, now + 0.035);
+      gain.gain.setValueAtTime(0.22, now + duration - 0.08);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+      oscillator.connect(gain);
+      gain.connect(ctx.destination);
+
+      oscillator.start(now);
+      oscillator.stop(now + duration + 0.02);
+    }
+
+    function selectNote(note, sourceElement = null) {
+      selectedNote = note;
+
+      selectedNoteEl.textContent = note.name;
+      selectedFreqEl.textContent = `${note.freq.toFixed(2)} Hz`;
+      selectedPositionEl.textContent = POSITION_INFO[note.name] || "—";
+      selectionHint.textContent = "เล่นเสียงโน้ตนี้แล้ว และสามารถกด Play Again ได้";
+      playAgainBtn.disabled = false;
+
+      // Remove selected state from all currently rendered note heads.
+      document.querySelectorAll(".note-head").forEach(el => el.classList.remove("selected"));
+
+      if (sourceElement) {
+        sourceElement.classList.add("selected");
+      }
+
+      playNote(note.freq);
+
+      // Smooth scroll to selected info on touch devices only when helpful.
+      if (window.innerWidth < 760) {
+        document.getElementById("selectedNote").scrollIntoView({
+          behavior: "smooth",
+          block: "nearest"
+        });
+      }
+    }
+
+    // ---------------------------------------------------------
+    // 7) Interactive staff click
+    // ---------------------------------------------------------
+    function handleStaffClick(event) {
+      const point = svgPointFromEvent(event);
+      const note = nearestNoteFromY(point.y);
+
+      // Keep selected note visual even if the note layer is not showing all notes.
+      drawSingleSelectedNote(note);
+    }
+
+    function drawSingleSelectedNote(note) {
+      clearRenderedNotes();
+      const index = NOTES.indexOf(note);
+      drawNote(note, index, true);
+
+      // Select the newly rendered head.
+      const head = notesLayer.querySelector(".note-head");
+      selectNote(note, head);
+    }
+
+    hitZone.addEventListener("click", handleStaffClick);
+
+    // Touch support is covered by pointer/click behavior on modern browsers.
+    // The SVG explicitly uses touch-action: manipulation in CSS.
+
+    // ---------------------------------------------------------
+    // 8) Show All / Clear
+    // ---------------------------------------------------------
+    function showAllNotes() {
+      clearRenderedNotes();
+      NOTES.forEach((note, index) => drawNote(note, index, true));
+
+      if (selectedNote) {
+        const index = NOTES.indexOf(selectedNote);
+        const heads = notesLayer.querySelectorAll(".note-head");
+        if (index >= 0 && heads[index]) {
+          heads[index].classList.add("selected");
+        }
+      }
+    }
+
+    function clearNotes() {
+      clearRenderedNotes();
+      selectedNote = null;
+      selectedNoteEl.textContent = "—";
+      selectedFreqEl.textContent = "—";
+      selectedPositionEl.textContent = "—";
+      selectionHint.textContent = "คลิกตำแหน่งบน Staff เพื่อเลือกโน้ต";
+      playAgainBtn.disabled = true;
+      hideTooltip();
+    }
+
+    showAllBtn.addEventListener("click", showAllNotes);
+    clearBtn.addEventListener("click", clearNotes);
+
+    playAgainBtn.addEventListener("click", () => {
+      if (selectedNote) {
+        playNote(selectedNote.freq);
+      }
+    });
+
+    // ---------------------------------------------------------
+    // 9) Tooltip
+    // ---------------------------------------------------------
+    function showTooltip(html, x, y) {
+      tooltip.innerHTML = html;
+      tooltip.classList.add("show");
+      moveTooltip(x, y);
+    }
+
+    function moveTooltip(x, y) {
+      const pad = 12;
+      const rect = tooltip.getBoundingClientRect();
+
+      let left = x + 14;
+      let top = y - rect.height - 14;
+
+      if (left + rect.width > window.innerWidth - pad) {
+        left = window.innerWidth - rect.width - pad;
+      }
+
+      if (top < pad) {
+        top = y + 16;
+      }
+
+      tooltip.style.left = `${Math.max(pad, left)}px`;
+      tooltip.style.top = `${Math.max(pad, top)}px`;
+    }
+
+    function hideTooltip() {
+      tooltip.classList.remove("show");
+    }
+
+    // ---------------------------------------------------------
+    // 10) Reference table
+    // ---------------------------------------------------------
+    function buildReferenceTable() {
+      tableBody.innerHTML = "";
+
+      NOTES.forEach(note => {
+        const row = document.createElement("tr");
+
+        const noteCell = document.createElement("td");
+        noteCell.innerHTML = `<span class="note-badge">${note.name}</span>`;
+
+        const freqCell = document.createElement("td");
+        freqCell.textContent = `${note.freq.toFixed(2)} Hz`;
+
+        const positionCell = document.createElement("td");
+        positionCell.textContent = POSITION_INFO[note.name];
+
+        row.appendChild(noteCell);
+        row.appendChild(freqCell);
+        row.appendChild(positionCell);
+
+        row.addEventListener("click", () => {
+          drawSingleSelectedNote(note);
+          document.querySelector(".staff-shell").scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+          });
+        });
+
+        row.style.cursor = "pointer";
+        tableBody.appendChild(row);
+      });
+    }
+
+    // ---------------------------------------------------------
+    // 11) Keyboard shortcut
+    // ---------------------------------------------------------
+    window.addEventListener("keydown", (event) => {
+      if (event.key.toLowerCase() === "r" && selectedNote) {
+        playNote(selectedNote.freq);
+      }
+
+      if (event.key.toLowerCase() === "a") {
+        showAllNotes();
+      }
+
+      if (event.key.toLowerCase() === "c") {
+        clearNotes();
+      }
+    });
+
+    // ---------------------------------------------------------
+    // 12) Initial setup
+    // ---------------------------------------------------------
+    buildReferenceTable();
+    // Start with no notes; students discover them by clicking.
+  </script>
+</body>
+</html>

@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sight Clapping Game - เกมฝึกปรบมือตามจังหวะ</title>
+    <style>
+        :root {
+            --primary-green: #2ecc71;
+            --dark-green: #1b5e20;
+            --light-green: #e8f5e9;
+            --accent-green: #00e676;
+            --bg-color: #0a1f0d;
+            --card-bg: #132e18;
+            --text-color: #ffffff;
+        }
+
+        body {
+            font-family: 'Sukhumvit Set', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            border: 2px solid var(--primary-green);
+            border-radius: 20px;
+            padding: 30px;
+            width: 100%;
+            max-width: 680px;
+            box-shadow: 0 10px 30px rgba(0, 230, 118, 0.2);
+            text-align: center;
+        }
+
+        h1 {
+            color: var(--accent-green);
+            margin-bottom: 5px;
+            font-size: 2em;
+        }
+
+        .level-info {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            color: var(--primary-green);
+        }
+
+        /* ตกแต่งบรรทัด 5 เส้น (Music Staff) */
+        .staff-container {
+            position: relative;
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 25px 15px 25px 50px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-bottom: 25px;
+            border: 3px solid var(--primary-green);
+            /* สร้างเส้นบรรทัด 5 เส้นด้วย CSS background */
+            background-image: repeating-linear-gradient(
+                #ffffff,
+                #ffffff 12px,
+                #000000 12px,
+                #000000 14px
+            );
+            background-size: 100% 70px;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        /* กุญแจซอล */
+        .clef {
+            position: absolute;
+            left: 10px;
+            font-size: 3.2em;
+            color: #000;
+            user-select: none;
+        }
+
+        .beat-box {
+            width: 70px;
+            height: 95px;
+            background-color: rgba(245, 245, 245, 0.9);
+            border: 2px solid #aaa;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            color: #333;
+            transition: all 0.1s ease;
+            z-index: 1;
+        }
+
+        .beat-number {
+            font-size: 0.85em;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .note-symbol {
+            font-size: 2.8em;
+            line-height: 1;
+            color: #000;
+        }
+
+        .beat-box.active {
+            border-color: var(--accent-green);
+            background-color: #e8f5e9;
+            box-shadow: 0 0 15px var(--accent-green);
+            transform: scale(1.1);
+        }
+
+        .beat-box.hit-success {
+            background-color: #c8e6c9;
+            border-color: var(--primary-green);
+        }
+
+        .beat-box.hit-miss {
+            background-color: #ffcdd2;
+            border-color: #e53935;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .btn {
+            background-color: var(--primary-green);
+            color: #000;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: 0.2s;
+            width: 80%;
+            max-width: 300px;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-green);
+            transform: translateY(-2px);
+        }
+
+        .clap-btn {
+            background: linear-gradient(145deg, #00e676, #1b5e20);
+            color: white;
+            height: 100px;
+            width: 100px;
+            border-radius: 50%;
+            font-size: 1.2em;
+            border: 4px solid #ffffff;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(0, 230, 118, 0.4);
+            margin-top: 10px;
+            user-select: none;
+        }
+
+        .clap-btn:active {
+            transform: scale(0.95);
+        }
+
+        .score-board {
+            font-size: 1.5em;
+            margin-top: 15px;
+            color: var(--accent-green);
+        }
+
+        .mic-status {
+            font-size: 0.9em;
+            color: #a5d6a7;
+            margin-top: 10px;
+        }
+
+        .status-message {
+            min-height: 32px;
+            margin-top: 5px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        /* ตัวนับถอยหลังใหญ่ */
+        .count-in-display {
+            color: #ffeb3b;
+            font-size: 1.4em;
+            animation: pulse 0.2s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>👏 Sight Clapping Game</h1>
+    <div class="level-info" id="level-title">ข้อที่ 1: ตัวดำล้วน (Quarter Notes)</div>
+
+    <!-- แผ่นโน้ตเพลงบรรทัด 5 เส้น -->
+    <div class="staff-container">
+        <div class="clef">🎼</div>
+        <div id="rhythm-display" style="display: flex; width: 100%; justify-content: space-around;"></div>
+    </div>
+
+    <div class="status-message" id="status-message">กด "เริ่มเล่น" เพื่อฟังสัญญาณนับถอยหลัง 1 ห้อง!</div>
+
+    <div class="controls">
+        <button class="btn" id="start-btn" onclick="startGame()">▶ เริ่มเล่น / เล่นอีกครั้ง</button>
+        <button class="clap-btn" id="clap-btn" onmousedown="registerClap()">👏<br>ปรบมือ!</button>
+        <div style="font-size: 0.85em; color: #aaa;">(กด Spacebar บนคีย์บอร์ดเพื่อปรบมือได้)</div>
+    </div>
+
+    <div class="score-board">คะแนน: <span id="score">0</span></div>
+    
+    <div class="mic-status">
+        <label>
+            <input type="checkbox" id="mic-toggle" onchange="toggleMic()"> เปิดใช้งานไมโครโฟนจับเสียงปรบมือ
+        </label>
+    </div>
+</div>
+
+<script>
+    const levels = [
+        { id: 1, name: "ข้อที่ 1: โน้ตตัวดำ 4 จังหวะ (♩ ♩ ♩ ♩)", pattern: [1, 1, 1, 1], symbols: ['♩', '♩', '♩', '♩'], bpm: 60 },
+        { id: 2, name: "ข้อที่ 2: ตัวดำผสมตัวหยุด (♩ ♩ ♩ 𝄽)", pattern: [1, 1, 1, 0], symbols: ['♩', '♩', '♩', '𝄽'], bpm: 60 },
+        { id: 3, name: "ข้อที่ 3: จังหวะเว้นตัวหยุด (♩ 𝄽 ♩ 𝄽)", pattern: [1, 0, 1, 0], symbols: ['♩', '𝄽', '♩', '𝄽'], bpm: 70 },
+        { id: 4, name: "ข้อที่ 4: โน้ตตัวขาวลากยาว 2 จังหวะ (𝄪 𝄪)", pattern: [1, 0, 1, 0], symbols: ['𝄪', '—', '𝄪', '—'], bpm: 65 },
+        { id: 5, name: "ข้อที่ 5: โจทย์ผสมท้าทาย (♩ 𝄪 ♩)", pattern: [1, 1, 0, 1], symbols: ['♩', '𝄪', '—', '♩'], bpm: 75 }
+    ];
+
+    let currentLevel = 0;
+    let score = 0;
+    let isPlaying = false;
+    let currentBeat = 0;
+    let beatInterval = null;
+    let userInputs = [];
+    
+    let audioCtx = null;
+    let micStream = null;
+    let analyser = null;
+    let isMicActive = false;
+
+    renderRhythmDisplay();
+
+    function renderRhythmDisplay() {
+        const display = document.getElementById('rhythm-display');
+        display.innerHTML = '';
+        const level = levels[currentLevel];
+
+        level.pattern.forEach((note, index) => {
+            const box = document.createElement('div');
+            box.className = 'beat-box';
+            box.id = `beat-${index}`;
+            box.innerHTML = `
+                <span class="beat-number">${index + 1}</span>
+                <span class="note-symbol">${level.symbols[index]}</span>
+            `;
+            display.appendChild(box);
+        });
+        
+        document.getElementById('level-title').innerText = level.name;
+    }
+
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    function startGame() {
+        initAudio();
+        if (isPlaying) clearInterval(beatInterval);
+        
+        isPlaying = true;
+        currentBeat = -4; // เริ่มจาก -4 ถึง -1 สำหรับ Count-in 1 ห้อง (4 จังหวะ)
+        userInputs = new Array(levels[currentLevel].pattern.length).fill(0);
+        
+        document.querySelectorAll('.beat-box').forEach(box => {
+            box.classList.remove('active', 'hit-success', 'hit-miss');
+        });
+
+        const bpm = levels[currentLevel].bpm;
+        const intervalMs = (60 / bpm) * 1000;
+
+        // วนลูปตามจังหวะ BPM
+        beatInterval = setInterval(() => {
+            // ช่วง Count-in สัญญาณนำก่อนเริ่ม (จังหวะ -4, -3, -2, -1)
+            if (currentBeat < 0) {
+                const countNumber = 5 + currentBeat; // แสดงเลข 1, 2, 3, 4
+                const statusEl = document.getElementById('status-message');
+                statusEl.className = "status-message count-in-display";
+                statusEl.innerText = `⏳ เตรียมตัว... ${countNumber}`;
+                
+                playBeep(1200, 0.1); // เสียงเคาะจังหวะนำ (High pitch)
+                currentBeat++;
+            } 
+            // ช่วงเริ่มเล่นจริง (จังหวะ 0 ถึง 3)
+            else if (currentBeat < levels[currentLevel].pattern.length) {
+                const statusEl = document.getElementById('status-message');
+                statusEl.className = "status-message";
+                statusEl.innerText = "👏 ปรบมือตามจังหวะ!";
+                statusEl.style.color = "#00e676";
+
+                // เอาสถานะ active ออกจากกล่องก่อนหน้า
+                if (currentBeat > 0) {
+                    const prevBox = document.getElementById(`beat-${currentBeat - 1}`);
+                    if (prevBox) prevBox.classList.remove('active');
+                }
+
+                const currentBox = document.getElementById(`beat-${currentBeat}`);
+                if (currentBox) currentBox.classList.add('active');
+                
+                playBeep(800, 0.15); // เสียงจังหวะปกติ
+                currentBeat++;
+            } 
+            // เล่นครบแล้ว -> จบข้อ
+            else {
+                const lastBox = document.getElementById(`beat-${currentBeat - 1}`);
+                if (lastBox) lastBox.classList.remove('active');
+
+                clearInterval(beatInterval);
+                isPlaying = false;
+                evaluateLevel();
+            }
+        }, intervalMs);
+    }
+
+    function registerClap() {
+        // ให้บันทึกการปรบมือเฉพาะตอนเริ่มเล่นจริงเท่านั้น (currentBeat > 0)
+        if (!isPlaying || currentBeat <= 0) return;
+        
+        const activeIndex = currentBeat - 1;
+        userInputs[activeIndex] = 1;
+
+        const activeBox = document.getElementById(`beat-${activeIndex}`);
+        if (activeBox) {
+            activeBox.style.transform = 'scale(1.2)';
+            setTimeout(() => activeBox.style.transform = 'scale(1.1)', 100);
+        }
+    }
+
+    function evaluateLevel() {
+        const pattern = levels[currentLevel].pattern;
+        let levelPassed = true;
+
+        pattern.forEach((expected, index) => {
+            const box = document.getElementById(`beat-${index}`);
+            const userClapped = userInputs[index];
+
+            if (expected === userClapped) {
+                box.classList.add('hit-success');
+            } else {
+                box.classList.add('hit-miss');
+                levelPassed = false;
+            }
+        });
+
+        const statusEl = document.getElementById('status-message');
+        if (levelPassed) {
+            score += 20;
+            document.getElementById('score').innerText = score;
+            statusEl.innerText = "ถูกต้องแม่นยำ! 🎉";
+            statusEl.style.color = "#00e676";
+            
+            setTimeout(() => {
+                if (currentLevel < levels.length - 1) {
+                    currentLevel++;
+                    renderRhythmDisplay();
+                    statusEl.innerText = "กด 'เริ่มเล่น' เพื่อไปข้อถัดไป";
+                } else {
+                    statusEl.innerText = "🏆 สุดยอด! คุณผ่านครบทุกข้อแล้ว!";
+                }
+            }, 1500);
+        } else {
+            statusEl.innerText = "จังหวะยังไม่เป๊ะ ลองใหม่อีกทีนะ!";
+            statusEl.style.color = "#ff5252";
+        }
+    }
+
+    // ฟังก์ชั่นสร้างเสียง BEEP (ปรับความถี่แหลม/ทุ้มได้)
+    function playBeep(freq = 800, duration = 0.1) {
+        if (!audioCtx) return;
+        
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+            e.preventDefault();
+            registerClap();
+        }
+    });
+
+    async function toggleMic() {
+        const micCheckBox = document.getElementById('mic-toggle');
+        
+        if (micCheckBox.checked) {
+            try {
+                micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                initAudio();
+                
+                const source = audioCtx.createMediaStreamSource(micStream);
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 256;
+                source.connect(analyser);
+                
+                isMicActive = true;
+                listenToMic();
+            } catch (err) {
+                alert("เปิดไมค์ไม่ได้ กรุณาอนุญาตสิทธิ์เบราว์เซอร์ก่อนครับ");
+                micCheckBox.checked = false;
+            }
+        } else {
+            isMicActive = false;
+            if (micStream) micStream.getTracks().forEach(track => track.stop());
+        }
+    }
+
+    function listenToMic() {
+        if (!isMicActive) return;
+        
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteFrequencyData(dataArray);
+        
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+            sum += dataArray[i];
+        }
+        let average = sum / dataArray.length;
+
+        if (average > 45) { 
+            registerClap();
+        }
+
+        requestAnimationFrame(listenToMic);
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Piano Intervals, Chords & Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #F0F4F8;
+            --card-bg: #FFFFFF;
+            --text-main: #2D3748;
+            --text-sub: #718096;
+            --accent-root: #FF6B81;
+            --accent-interval: #4E54C8;
+            --accent-green: #2ED573;
+            --accent-yellow: #FFA502;
+            --accent-purple: #9b59b6;
+            --border-color: #2D3748;
+            --border-width: 3px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Kanit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--card-bg);
+            border-radius: 24px;
+            border: var(--border-width) solid var(--border-color);
+            box-shadow: 0 12px 0 var(--border-color);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Navigation Tabs */
+        .tab-nav {
+            display: flex;
+            gap: 10px;
+            border-bottom: 3px solid #E2E8F0;
+            padding-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            flex: 1;
+            min-width: 160px;
+            padding: 10px 14px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            border-radius: 14px;
+            border: 2px solid var(--border-color);
+            background: #EDF2F7;
+            color: var(--text-sub);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 0 var(--border-color);
+            text-align: center;
+        }
+
+        .tab-btn.active {
+            background: var(--accent-interval);
+            color: white;
+            box-shadow: 0 4px 0 var(--border-color);
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: #E2E8F0;
+            transform: translateY(-2px);
+        }
+
+        .tab-content {
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .tab-content.active {
+            display: flex;
+        }
+
+        header {
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 1.7rem;
+            color: var(--text-main);
+            font-weight: 700;
+        }
+
+        header p {
+            font-size: 0.9rem;
+            color: var(--text-sub);
+        }
+
+        /* Sheet Music Area */
+        .staff-container {
+            background-color: #FFFDF9;
+            border: var(--border-width) solid var(--border-color);
+            border-radius: 16px;
+            padding: 10px;
+            position: relative;
+            height: 140px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        svg#sheet, svg#sheet-chord {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Controls Area */
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+            background: #EBF8FF;
+            padding: 16px;
+            border-radius: 16px;
+            border: 2px solid #BEE3F8;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-sub);
+        }
+
+        select, button {
+            padding: 8px 14px;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            outline: none;
+            font-size: 0.95rem;
+            font-weight: 600;
+            background: white;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        button.btn-action {
+            background-color: var(--accent-interval);
+            color: white;
+            box-shadow: 0 4px 0 var(--border-color);
+        }
+
+        button.btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 var(--border-color);
+        }
+
+        button.btn-action:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 var(--border-color);
+        }
+
+        /* Chord Explorer Specific UI */
+        .roman-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            width: 100%;
+            margin-top: 5px;
+        }
+
+        .btn-roman {
+            padding: 10px 4px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            background: #FFF;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            box-shadow: 0 3px 0 var(--border-color);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .btn-roman.active {
+            background: var(--accent-purple);
+            color: white;
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 var(--border-color);
+        }
+
+        .btn-roman span.note-name {
+            font-size: 0.75rem;
+            opacity: 0.8;
+            font-weight: 500;
+        }
+
+        /* Game Section */
+        .game-card {
+            background: #FFF9E6;
+            border: 2px solid #FFEAA7;
+            padding: 20px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            text-align: center;
+        }
+
+        .score-board {
+            display: flex;
+            gap: 20px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            border: 2px solid var(--border-color);
+        }
+
+        .chord-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        /* Piano Styles */
+        .piano-container {
+            background: #2D3748;
+            padding: 16px 16px 20px 16px;
+            border-radius: 20px;
+            border: var(--border-width) solid var(--border-color);
+            box-shadow: 0 8px 0 rgba(0,0,0,0.15);
+            display: flex;
+            justify-content: center;
+        }
+
+        .piano {
+            position: relative;
+            display: flex;
+            width: 100%;
+            max-width: 760px;
+            height: 160px;
+            user-select: none;
+        }
+
+        .white-keys {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        .key-white {
+            flex: 1;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 0 0 8px 8px;
+            box-shadow: inset 0 -6px 0 #E2E8F0;
+            cursor: pointer;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #A0AEC0;
+            z-index: 1;
+            transition: background 0.1s, transform 0.05s;
+        }
+
+        .black-keys {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60%;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .key-black {
+            position: absolute;
+            width: calc(100% / 14 * 0.65);
+            height: 100%;
+            background: #1A202C;
+            border: 2px solid var(--border-color);
+            border-radius: 0 0 6px 6px;
+            box-shadow: inset 0 -4px 0 #4A5568;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: background 0.1s, transform 0.05s;
+        }
+
+        /* Key Highlight States */
+        .active-root { background: var(--accent-root) !important; color: white; transform: translateY(3px); }
+        .active-interval { background: var(--accent-interval) !important; color: white; transform: translateY(3px); }
+        .active-chord { background: var(--accent-green) !important; color: white; transform: translateY(3px); }
+        .active-tension { background: var(--accent-purple) !important; color: white; transform: translateY(3px); }
+
+        .info-box {
+            text-align: center;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--accent-interval);
+            min-height: 24px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('interval-tab', this)">🎹 สาธิตขั้นคู่ (Intervals)</button>
+        <button class="tab-btn" onclick="switchTab('chord-tab', this)">🎼 กดคอร์ด & Tension</button>
+        <button class="tab-btn" onclick="switchTab('game-tab', this)">🎮 เกมทายคอร์ด (Game)</button>
+    </div>
+
+    <!-- PAGE 1: INTERVAL DEMO -->
+    <div id="interval-tab" class="tab-content active">
+        <header>
+            <h1>Piano Intervals Demonstration</h1>
+            <p>เรียนรู้ระยะห่างเสียงบนบรรทัด 5 เส้นและเปียโน</p>
+        </header>
+
+        <div class="staff-container">
+            <svg id="sheet" viewBox="0 0 600 130">
+                <text x="15" y="85" font-size="60" font-family="serif" fill="#2D3748">🎼</text>
+                <line x1="10" y1="30" x2="590" y2="30" stroke="#CBD5E0" stroke-width="2"/>
+                <line x1="10" y1="45" x2="590" y2="45" stroke="#CBD5E0" stroke-width="2"/>
+                <line x1="10" y1="60" x2="590" y2="60" stroke="#CBD5E0" stroke-width="2"/>
+                <line x1="10" y1="75" x2="590" y2="75" stroke="#CBD5E0" stroke-width="2"/>
+                <line x1="10" y1="90" x2="590" y2="90" stroke="#CBD5E0" stroke-width="2"/>
+                <line id="cursor" x1="220" y1="15" x2="220" y2="105" stroke="#FF6B81" stroke-width="3" stroke-dasharray="4" style="display:none;"/>
+                <g id="notes-group"></g>
+            </svg>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="root-note">โน้ตเริ่มต้น (Root):</label>
+                <select id="root-note"></select>
+            </div>
+            <div class="control-group">
+                <label for="interval-select">ประเภทขั้นคู่ (Interval):</label>
+                <select id="interval-select">
+                    <option value="0">Unison (1st - 0 Semitones)</option>
+                    <option value="1">Minor 2nd (1 Semitone)</option>
+                    <option value="2">Major 2nd (2 Semitones)</option>
+                    <option value="3">Minor 3rd (3 Semitones)</option>
+                    <option value="4" selected>Major 3rd (4 Semitones)</option>
+                    <option value="5">Perfect 4th (5 Semitones)</option>
+                    <option value="6">Tritone (6 Semitones)</option>
+                    <option value="7">Perfect 5th (7 Semitones)</option>
+                    <option value="8">Minor 6th (8 Semitones)</option>
+                    <option value="9">Major 6th (9 Semitones)</option>
+                    <option value="10">Minor 7th (10 Semitones)</option>
+                    <option value="11">Major 7th (11 Semitones)</option>
+                    <option value="12">Octave (8ve - 12 Semitones)</option>
+                </select>
+            </div>
+            <div class="control-group" style="align-self: flex-end;">
+                <button class="btn-action" onclick="playIntervalSequence()">▶ เล่นเสียง (Play)</button>
+            </div>
+        </div>
+
+        <div class="info-box" id="interval-info">กดปุ่ม "เล่นเสียง" เพื่อฟังเสียงขั้นคู่</div>
+
+        <div class="piano-container">
+            <div class="piano" id="piano-interval">
+                <div class="white-keys"></div>
+                <div class="black-keys"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 2: CHORD & TENSION EXPLORER -->
+    <div id="chord-tab" class="tab-content">
+        <header>
+            <h1>Chord & Tension Explorer</h1>
+            <p>เลือก Key, ลำดับคอร์ด (Roman Numerals) และเพิ่ม Tension ต่างๆ ได้ตามใจชอบ</p>
+        </header>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="key-root">เลือก Key Root:</label>
+                <select id="key-root">
+                    <option value="0">C Key</option>
+                    <option value="2">D Key</option>
+                    <option value="4">E Key</option>
+                    <option value="5">F Key</option>
+                    <option value="7">G Key</option>
+                    <option value="9">A Key</option>
+                    <option value="11">B Key</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="scale-type">ชนิดของ Scale:</label>
+                <select id="scale-type">
+                    <option value="major">Major Scale</option>
+                    <option value="minor">Natural Minor Scale</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="tension-select">เพิ่ม Tension / Extension:</label>
+                <select id="tension-select">
+                    <option value="triad">Basic Triad (3 โน้ตปกติ)</option>
+                    <option value="7th">7th Chord (+ขั้น7)</option>
+                    <option value="maj7">Major 7th (+ขั้น7Major)</option>
+                    <option value="9th">9th Tension (+ขั้น9)</option>
+                    <option value="11th">11th Tension (+ขั้น11)</option>
+                    <option value="sus2">Sus2 (เปลี่ยน3เป็น2)</option>
+                    <option value="sus4">Sus4 (เปลี่ยน3เป็น4)</option>
+                    <option value="add9">Add9 (เพิ่ม9ไม่ใส่7)</option>
+                </select>
+            </div>
+
+            <div class="control-group" style="align-self: flex-end;">
+                <button class="btn-action" style="background:var(--accent-purple);" onclick="playCurrentChord()">▶ กดฟังเสียงคอร์ด (Play Chord)</button>
+            </div>
+        </div>
+
+        <!-- Roman Numerals Selector -->
+        <div>
+            <label>เลือกลำดับคอร์ดในสเกล (Degree):</label>
+            <div class="roman-grid" id="roman-grid"></div>
+        </div>
+
+        <div class="info-box" id="chord-info">คอร์ดปัจจุบัน: -</div>
+
+        <div class="piano-container">
+            <div class="piano" id="piano-chord">
+                <div class="white-keys"></div>
+                <div class="black-keys"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 3: CHORD QUIZ GAME -->
+    <div id="game-tab" class="tab-content">
+        <header>
+            <h1>🎮 Chord Ear Training Game</h1>
+            <p>ฟังเสียงคอร์ดเปียโน แล้วทายชนิดคอร์ดให้ถูกต้อง!</p>
+        </header>
+
+        <div class="game-card">
+            <div class="score-board">
+                <span>คะแนน: <span id="game-score" style="color:var(--accent-green)">0</span></span>
+                <span>ข้อที่: <span id="game-round">1</span>/10</span>
+            </div>
+
+            <div id="game-message" style="font-size: 1.1rem; font-weight: 600;">พร้อมแล้วกด "ข้อถัดไป" เพื่อฟังคอร์ด</div>
+
+            <div style="display:flex; gap:10px;">
+                <button class="btn-action" style="background:var(--accent-yellow);" onclick="startNewGameRound()">🔊 ฟังคอร์ดซ้ำ (Replay)</button>
+                <button class="btn-action" style="background:var(--accent-green);" onclick="nextQuestion()">➡️ ข้อถัดไป (Next)</button>
+            </div>
+
+            <div class="chord-options" id="chord-options">
+                <button class="btn-action" style="background:white; color:#2D3748;" onclick="checkAnswer('Major')">Major</button>
+                <button class="btn-action" style="background:white; color:#2D3748;" onclick="checkAnswer('Minor')">Minor</button>
+                <button class="btn-action" style="background:white; color:#2D3748;" onclick="checkAnswer('Diminished')">Diminished</button>
+                <button class="btn-action" style="background:white; color:#2D3748;" onclick="checkAnswer('Augmented')">Augmented</button>
+            </div>
+        </div>
+
+        <div class="piano-container">
+            <div class="piano" id="piano-game">
+                <div class="white-keys"></div>
+                <div class="black-keys"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Audio Context Setup
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    // Notes Master Data (2 Octaves: C4 to B5)
+    const notesData = [
+        { name: "C", octave: 4, isBlack: false, staffY: 105, ledger: true },
+        { name: "C#", octave: 4, isBlack: true, staffY: 105, whiteIndex: 0 },
+        { name: "D", octave: 4, isBlack: false, staffY: 97.5 },
+        { name: "D#", octave: 4, isBlack: true, staffY: 97.5, whiteIndex: 1 },
+        { name: "E", octave: 4, isBlack: false, staffY: 90 },
+        { name: "F", octave: 4, isBlack: false, staffY: 82.5 },
+        { name: "F#", octave: 4, isBlack: true, staffY: 82.5, whiteIndex: 3 },
+        { name: "G", octave: 4, isBlack: false, staffY: 75 },
+        { name: "G#", octave: 4, isBlack: true, staffY: 75, whiteIndex: 4 },
+        { name: "A", octave: 4, isBlack: false, staffY: 67.5 },
+        { name: "A#", octave: 4, isBlack: true, staffY: 67.5, whiteIndex: 5 },
+        { name: "B", octave: 4, isBlack: false, staffY: 60 },
+        
+        { name: "C", octave: 5, isBlack: false, staffY: 52.5 },
+        { name: "C#", octave: 5, isBlack: true, staffY: 52.5, whiteIndex: 7 },
+        { name: "D", octave: 5, isBlack: false, staffY: 45 },
+        { name: "D#", octave: 5, isBlack: true, staffY: 45, whiteIndex: 8 },
+        { name: "E", octave: 5, isBlack: false, staffY: 37.5 },
+        { name: "F", octave: 5, isBlack: false, staffY: 30 },
+        { name: "F#", octave: 5, isBlack: true, staffY: 30, whiteIndex: 10 },
+        { name: "G", octave: 5, isBlack: false, staffY: 22.5 },
+        { name: "G#", octave: 5, isBlack: true, staffY: 22.5, whiteIndex: 11 },
+        { name: "A", octave: 5, isBlack: false, staffY: 15, ledger: true },
+        { name: "A#", octave: 5, isBlack: true, staffY: 15, whiteIndex: 12 },
+        { name: "B", octave: 5, isBlack: false, staffY: 7.5, ledger: true }
+    ];
+
+    // Scale Degree Formulas
+    const scaleDegrees = {
+        major: [
+            { roman: "I", semitones: 0, type: "Major" },
+            { roman: "ii", semitones: 2, type: "Minor" },
+            { roman: "iii", semitones: 4, type: "Minor" },
+            { roman: "IV", semitones: 5, type: "Major" },
+            { roman: "V", semitones: 7, type: "Major" },
+            { roman: "vi", semitones: 9, type: "Minor" },
+            { roman: "vii°", semitones: 11, type: "Diminished" }
+        ],
+        minor: [
+            { roman: "i", semitones: 0, type: "Minor" },
+            { roman: "ii°", semitones: 2, type: "Diminished" },
+            { roman: "III", semitones: 3, type: "Major" },
+            { roman: "iv", semitones: 5, type: "Minor" },
+            { roman: "v", semitones: 7, type: "Minor" },
+            { roman: "VI", semitones: 8, type: "Major" },
+            { roman: "VII", semitones: 10, type: "Major" }
+        ]
+    };
+
+    function getFrequency(index) {
+        return 440 * Math.pow(2, (index - 9) / 12);
+    }
+
+    function playTone(freq, duration = 0.8) {
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + 0.04);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    }
+
+    // Switch Tabs System
+    function switchTab(tabId, btnEl) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        btnEl.classList.add('active');
+        document.getElementById(tabId).classList.add('active');
+
+        if(tabId === 'game-tab' && currentRound === 0) {
+            nextQuestion();
+        }
+    }
+
+    // Piano Layout Generator
+    function createPianoLayout(containerId, keyCallback) {
+        const container = document.getElementById(containerId);
+        const whiteContainer = container.querySelector('.white-keys');
+        const blackContainer = container.querySelector('.black-keys');
+        whiteContainer.innerHTML = '';
+        blackContainer.innerHTML = '';
+
+        notesData.forEach((note, index) => {
+            if (!note.isBlack) {
+                const wKey = document.createElement('div');
+                wKey.className = 'key-white';
+                wKey.dataset.index = index;
+                wKey.innerHTML = `<span>${note.name}${note.octave}</span>`;
+                wKey.addEventListener('click', () => keyCallback(index));
+                whiteContainer.appendChild(wKey);
+            } else {
+                const bKey = document.createElement('div');
+                bKey.className = 'key-black';
+                bKey.dataset.index = index;
+                const leftPercent = ((note.whiteIndex + 0.68) / 14) * 100;
+                bKey.style.left = `${leftPercent}%`;
+                bKey.addEventListener('click', () => keyCallback(index));
+                blackContainer.appendChild(bKey);
+            }
+        });
+    }
+
+    /* ---------------- PAGE 1: INTERVALS LOGIC ---------------- */
+    const rootSelect = document.getElementById('root-note');
+    const intervalSelect = document.getElementById('interval-select');
+    const notesGroup = document.getElementById('notes-group');
+    const cursor = document.getElementById('cursor');
+    const intervalInfo = document.getElementById('interval-info');
+
+    function initIntervalPage() {
+        notesData.forEach((note, index) => {
+            if (index <= 12) {
+                const opt = document.createElement('option');
+                opt.value = index;
+                opt.textContent = `${note.name}${note.octave}`;
+                rootSelect.appendChild(opt);
+            }
+        });
+
+        createPianoLayout('piano-interval', (index) => {
+            if (index <= 12) rootSelect.value = index;
+            playTone(getFrequency(index));
+            renderInterval();
+        });
+
+        rootSelect.addEventListener('change', renderInterval);
+        intervalSelect.addEventListener('change', renderInterval);
+        renderInterval();
+    }
+
+    function renderInterval() {
+        const rootIdx = parseInt(rootSelect.value);
+        const interval = parseInt(intervalSelect.value);
+        const secondIdx = Math.min(rootIdx + interval, notesData.length - 1);
+
+        document.querySelectorAll('#piano-interval .key-white, #piano-interval .key-black').forEach(k => {
+            k.classList.remove('active-root', 'active-interval');
+        });
+
+        const rKey = document.querySelector(`#piano-interval [data-index="${rootIdx}"]`);
+        const sKey = document.querySelector(`#piano-interval [data-index="${secondIdx}"]`);
+        if (rKey) rKey.classList.add('active-root');
+        if (sKey) sKey.classList.add('active-interval');
+
+        notesGroup.innerHTML = '';
+        drawNoteOnStaff(notesData[rootIdx], 220, '#FF6B81');
+        drawNoteOnStaff(notesData[secondIdx], 380, '#4E54C8');
+
+        intervalInfo.innerHTML = `โน้ตแรก: <b>${notesData[rootIdx].name}${notesData[rootIdx].octave}</b> | โน้ตสอง: <b>${notesData[secondIdx].name}${notesData[secondIdx].octave}</b> (${intervalSelect.options[intervalSelect.selectedIndex].text})`;
+    }
+
+    function drawNoteOnStaff(noteObj, xPos, color) {
+        if (noteObj.ledger) {
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("x1", xPos - 16); line.setAttribute("x2", xPos + 16);
+            line.setAttribute("y1", noteObj.staffY); line.setAttribute("y2", noteObj.staffY);
+            line.setAttribute("stroke", "#2D3748"); line.setAttribute("stroke-width", "2");
+            notesGroup.appendChild(line);
+        }
+        if (noteObj.isBlack) {
+            const acc = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            acc.setAttribute("x", xPos - 22); acc.setAttribute("y", noteObj.staffY + 5);
+            acc.setAttribute("font-size", "18"); acc.setAttribute("fill", color);
+            acc.textContent = "♯";
+            notesGroup.appendChild(acc);
+        }
+        const head = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+        head.setAttribute("cx", xPos); head.setAttribute("cy", noteObj.staffY);
+        head.setAttribute("rx", "8.5"); head.setAttribute("ry", "6.5");
+        head.setAttribute("fill", color);
+        head.setAttribute("transform", `rotate(-20 ${xPos} ${noteObj.staffY})`);
+        notesGroup.appendChild(head);
+
+        const stemUp = noteObj.staffY > 60;
+        const stem = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        stem.setAttribute("x1", stemUp ? xPos + 7.5 : xPos - 7.5);
+        stem.setAttribute("y1", noteObj.staffY);
+        stem.setAttribute("x2", stemUp ? xPos + 7.5 : xPos - 7.5);
+        stem.setAttribute("y2", stemUp ? noteObj.staffY - 32 : noteObj.staffY + 32);
+        stem.setAttribute("stroke", color); stem.setAttribute("stroke-width", "2.5");
+        notesGroup.appendChild(stem);
+    }
+
+    function playIntervalSequence() {
+        const rootIdx = parseInt(rootSelect.value);
+        const interval = parseInt(intervalSelect.value);
+        const secondIdx = Math.min(rootIdx + interval, notesData.length - 1);
+
+        cursor.style.display = "block";
+        cursor.setAttribute("x1", 220); cursor.setAttribute("x2", 220);
+        playTone(getFrequency(rootIdx));
+
+        setTimeout(() => {
+            cursor.setAttribute("x1", 380); cursor.setAttribute("x2", 380);
+            playTone(getFrequency(secondIdx));
+        }, 650);
+
+        setTimeout(() => {
+            cursor.style.display = "none";
+            playTone(getFrequency(rootIdx));
+            playTone(getFrequency(secondIdx));
+        }, 1400);
+    }
+
+    /* ---------------- PAGE 2: CHORD EXPLORER LOGIC ---------------- */
+    const keyRootSelect = document.getElementById('key-root');
+    const scaleTypeSelect = document.getElementById('scale-type');
+    const tensionSelect = document.getElementById('tension-select');
+    const romanGrid = document.getElementById('roman-grid');
+    const chordInfo = document.getElementById('chord-info');
+    let selectedDegreeIndex = 0;
+
+    function initChordPage() {
+        createPianoLayout('piano-chord', (index) => {
+            playTone(getFrequency(index));
+        });
+
+        keyRootSelect.addEventListener('change', updateRomanButtons);
+        scaleTypeSelect.addEventListener('change', updateRomanButtons);
+        tensionSelect.addEventListener('change', renderChord);
+
+        updateRomanButtons();
+    }
+
+    function updateRomanButtons() {
+        romanGrid.innerHTML = '';
+        const keyBase = parseInt(keyRootSelect.value);
+        const scaleType = scaleTypeSelect.value;
+        const degrees = scaleDegrees[scaleType];
+
+        degrees.forEach((deg, idx) => {
+            const noteIdx = (keyBase + deg.semitones) % 12;
+            const rootNoteName = notesData[noteIdx].name;
+
+            const btn = document.createElement('button');
+            btn.className = `btn-roman ${idx === selectedDegreeIndex ? 'active' : ''}`;
+            btn.innerHTML = `${deg.roman}<span class="note-name">${rootNoteName}</span>`;
+            btn.addEventListener('click', () => {
+                selectedDegreeIndex = idx;
+                document.querySelectorAll('.btn-roman').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                renderChord();
+            });
+            romanGrid.appendChild(btn);
+        });
+
+        renderChord();
+    }
+
+    function getChordIntervals(type, tension) {
+        let offsets = [];
+        // Base Triads
+        if (type === "Major") offsets = [0, 4, 7];
+        else if (type === "Minor") offsets = [0, 3, 7];
+        else if (type === "Diminished") offsets = [0, 3, 6];
+
+        // Apply Tension Mods
+        if (tension === "sus2") offsets = [0, 2, 7];
+        else if (tension === "sus4") offsets = [0, 5, 7];
+        else if (tension === "7th") offsets.push(type === "Major" ? 10 : (type === "Minor" ? 10 : 9));
+        else if (tension === "maj7") offsets.push(11);
+        else if (tension === "add9") offsets.push(14);
+        else if (tension === "9th") {
+            offsets.push(type === "Major" ? 11 : 10);
+            offsets.push(14);
+        } else if (tension === "11th") {
+            offsets.push(10);
+            offsets.push(14);
+            offsets.push(17);
+        }
+
+        return offsets;
+    }
+
+    function renderChord() {
+        const keyBase = parseInt(keyRootSelect.value);
+        const scaleType = scaleTypeSelect.value;
+        const deg = scaleDegrees[scaleType][selectedDegreeIndex];
+        const tension = tensionSelect.value;
+
+        const chordRootIndex = keyBase + deg.semitones;
+        const offsets = getChordIntervals(deg.type, tension);
+        
+        // Highlight Piano
+        document.querySelectorAll('#piano-chord .key-white, #piano-chord .key-black').forEach(k => {
+            k.classList.remove('active-tension', 'active-root');
+        });
+
+        const activeNotes = [];
+        offsets.forEach(off => {
+            const idx = chordRootIndex + off;
+            if (idx < notesData.length) {
+                activeNotes.push(notesData[idx].name + notesData[idx].octave);
+                const key = document.querySelector(`#piano-chord [data-index="${idx}"]`);
+                if (key) key.classList.add(off === 0 ? 'active-root' : 'active-tension');
+            }
+        });
+
+        const rootName = notesData[chordRootIndex].name;
+        chordInfo.innerHTML = `คอร์ด: <b>${rootName} ${deg.type} (${tension.toUpperCase()})</b> | โน้ตประกอบ: <b>${activeNotes.join(' - ')}</b>`;
+    }
+
+    function playCurrentChord() {
+        const keyBase = parseInt(keyRootSelect.value);
+        const scaleType = scaleTypeSelect.value;
+        const deg = scaleDegrees[scaleType][selectedDegreeIndex];
+        const tension = tensionSelect.value;
+
+        const chordRootIndex = keyBase + deg.semitones;
+        const offsets = getChordIntervals(deg.type, tension);
+
+        offsets.forEach(off => {
+            const idx = chordRootIndex + off;
+            if (idx < notesData.length) {
+                playTone(getFrequency(idx), 1.5);
+            }
+        });
+    }
+
+    /* ---------------- PAGE 3: CHORD GAME LOGIC ---------------- */
+    let currentScore = 0;
+    let currentRound = 0;
+    let currentChordType = '';
+    let currentRootIndex = 0;
+    let isAnswered = false;
+
+    const chordFormulas = {
+        'Major': [0, 4, 7],
+        'Minor': [0, 3, 7],
+        'Diminished': [0, 3, 6],
+        'Augmented': [0, 4, 8]
+    };
+
+    function initGamePage() {
+        createPianoLayout('piano-game', (index) => {
+            playTone(getFrequency(index));
+        });
+    }
+
+    function nextQuestion() {
+        if (currentRound >= 10) {
+            alert(`🎉 จบเกม! คุณได้คะแนนทั้งหมด ${currentScore}/10 คะแนน`);
+            currentScore = 0;
+            currentRound = 0;
+        }
+
+        currentRound++;
+        isAnswered = false;
+        document.getElementById('game-score').textContent = currentScore;
+        document.getElementById('game-round').textContent = currentRound;
+        document.getElementById('game-message').textContent = '🔊 ฟังเสียงแล้วทายว่าคือคอร์ดอะไร?';
+        document.getElementById('game-message').style.color = '#2D3748';
+
+        document.querySelectorAll('#piano-game .key-white, #piano-game .key-black').forEach(k => {
+            k.classList.remove('active-chord');
+        });
+
+        currentRootIndex = Math.floor(Math.random() * 5); // C4 to E4
+        const chordKeys = Object.keys(chordFormulas);
+        currentChordType = chordKeys[Math.floor(Math.random() * chordKeys.length)];
+
+        startNewGameRound();
+    }
+
+    function startNewGameRound() {
+        const offsets = chordFormulas[currentChordType];
+        offsets.forEach(offset => {
+            playTone(getFrequency(currentRootIndex + offset), 1.2);
+        });
+    }
+
+    function checkAnswer(selectedType) {
+        if (isAnswered) return;
+        isAnswered = true;
+
+        const offsets = chordFormulas[currentChordType];
+        const chordNoteNames = offsets.map(off => `${notesData[currentRootIndex + off].name}${notesData[currentRootIndex + off].octave}`).join(' - ');
+
+        offsets.forEach(offset => {
+            const key = document.querySelector(`#piano-game [data-index="${currentRootIndex + offset}"]`);
+            if (key) key.classList.add('active-chord');
+        });
+
+        if (selectedType === currentChordType) {
+            currentScore++;
+            document.getElementById('game-score').textContent = currentScore;
+            document.getElementById('game-message').textContent = `✅ ถูกต้อง! คอร์ดนี้คือ ${notesData[currentRootIndex].name} ${currentChordType} (${chordNoteNames})`;
+            document.getElementById('game-message').style.color = 'var(--accent-green)';
+        } else {
+            document.getElementById('game-message').textContent = `❌ ผิดนิดเดียว! คำตอบคือ ${notesData[currentRootIndex].name} ${currentChordType} (${chordNoteNames})`;
+            document.getElementById('game-message').style.color = 'var(--accent-root)';
+        }
+    }
+
+    // Initialize Pages
+    initIntervalPage();
+    initChordPage();
+    initGamePage();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สื่อการสอนและทดสอบย่านความถี่เสียง (Audio Frequency Lab)</title>
+    <style>
+        :root {
+            --bg-color: #0b0e14;
+            --card-bg: #151b23;
+            --border-color: #30363d;
+            --accent-color: #58a6ff;
+            --accent-glow: rgba(88, 166, 255, 0.4);
+            --subbass-color: #ff5555;
+            --bass-color: #ff9933;
+            --mid-color: #ffcc00;
+            --highmid-color: #33cc66;
+            --treble-color: #3399ff;
+            --air-color: #cc66ff;
+            --text-main: #c9d1d9;
+            --text-heading: #ffffff;
+            --font-stack: 'Sukhumvit Set', 'Segoe UI', system-ui, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-stack);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            max-width: 960px;
+            width: 100%;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.7);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        header h1 {
+            color: var(--accent-color);
+            font-size: 26px;
+            margin-bottom: 6px;
+        }
+
+        header p {
+            color: #8b949e;
+            font-size: 14px;
+        }
+
+        /* Nav Tabs */
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: #0d1117;
+            padding: 6px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            color: #8b949e;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--accent-color);
+            color: #ffffff;
+            box-shadow: 0 4px 12px var(--accent-glow);
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .section-card {
+            background: #0d1117;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 17px;
+            color: var(--text-heading);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-left: 4px solid var(--accent-color);
+            padding-left: 10px;
+        }
+
+        /* Frequency Display Screen */
+        .display-screen {
+            background: #000;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .freq-readout {
+            font-size: 48px;
+            font-family: monospace;
+            font-weight: bold;
+            color: #58a6ff;
+            text-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .freq-tag-display {
+            font-size: 15px;
+            color: #8b949e;
+            margin-bottom: 10px;
+            height: 22px;
+        }
+
+        .spectrum-bar-wrap {
+            height: 24px;
+            background: #161b22;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .spectrum-pointer {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 8px;
+            background: #3fb950;
+            box-shadow: 0 0 12px #3fb950;
+            left: 0%;
+            transition: left 0.1s linear;
+        }
+
+        .spectrum-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #8b949e;
+            margin-top: 6px;
+        }
+
+        /* Continuous Slider Generator */
+        .slider-box {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: #161b22;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .slider-box input[type=range] {
+            flex: 1;
+            height: 8px;
+            accent-color: var(--accent-color);
+            cursor: pointer;
+        }
+
+        /* Frequency Testing Grid Categories */
+        .category-group {
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 15px;
+            background: #161b22;
+        }
+
+        .category-header {
+            font-size: 15px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .category-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .band-demo-btn {
+            border: 1px solid currentColor;
+            color: var(--band-color, var(--accent-color));
+            background: color-mix(in srgb, var(--band-color, var(--accent-color)) 12%, transparent);
+            padding: 7px 11px;
+            border-radius: 7px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform .2s, background .2s, box-shadow .2s;
+            white-space: nowrap;
+        }
+
+        .band-demo-btn:hover,
+        .band-demo-btn.playing {
+            transform: translateY(-1px);
+            background: color-mix(in srgb, var(--band-color, var(--accent-color)) 25%, transparent);
+            box-shadow: 0 0 12px color-mix(in srgb, var(--band-color, var(--accent-color)) 45%, transparent);
+        }
+
+        .cat-badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #000;
+            font-weight: bold;
+        }
+
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 10px;
+        }
+
+        .freq-btn {
+            background: #21262d;
+            border: 2px solid var(--border-color);
+            color: var(--text-heading);
+            padding: 12px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .freq-btn:hover {
+            border-color: var(--accent-color);
+            background: #30363d;
+            transform: translateY(-2px);
+        }
+
+        .freq-btn.playing {
+            border-color: #3fb950 !important;
+            background: rgba(63, 185, 80, 0.15) !important;
+            box-shadow: 0 0 10px rgba(63, 185, 80, 0.4);
+        }
+
+        .freq-btn .hz-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffffff;
+            display: block;
+        }
+
+        .freq-btn .hz-sub {
+            font-size: 11px;
+            color: #8b949e;
+            margin-top: 2px;
+            display: block;
+        }
+
+        /* Control Play Modes */
+        .mode-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+            font-size: 14px;
+            color: #8b949e;
+        }
+
+        .mode-btn {
+            padding: 6px 14px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: #21262d;
+            color: #c9d1d9;
+            cursor: pointer;
+        }
+
+        .mode-btn.active {
+            background: var(--accent-color);
+            color: #fff;
+            border-color: var(--accent-color);
+        }
+
+        /* Quiz Styles */
+        .quiz-stats {
+            display: flex;
+            justify-content: space-between;
+            background: #161b22;
+            padding: 12px 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .stat-val { color: var(--accent-color); font-weight: bold; }
+
+        .choices-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .choice-btn {
+            background: #21262d;
+            border: 2px solid var(--border-color);
+            color: var(--text-heading);
+            padding: 25px 15px;
+            border-radius: 12px;
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .choice-btn:hover:not(:disabled) {
+            border-color: var(--accent-color);
+            background: #30363d;
+        }
+
+        /* Feedback box */
+        .feedback-box {
+            background: #161b22;
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            display: none;
+            line-height: 1.6;
+        }
+
+        /* Master Controls */
+        .master-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #010409;
+            padding: 12px 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            margin-top: 25px;
+        }
+
+        .btn-stop-all {
+            background: #da3633;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        @media (max-width: 700px) {
+            body { padding: 10px; }
+            .app-container { padding: 15px; }
+            .nav-tabs { flex-direction: column; }
+            .slider-box, .master-bar { align-items: stretch; flex-direction: column; }
+            .category-header { align-items: flex-start; flex-direction: column; }
+            .category-actions { width: 100%; justify-content: space-between; }
+            .band-demo-btn { flex: 1; }
+            .freq-readout { font-size: 38px; }
+            .choices-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <h1>🎛️ เครื่องมือทดสอบและสื่อการสอนย่านความถี่เสียง (Hz)</h1>
+        <p>แยกปุ่มทดสอบแต่ละย่านความถี่อย่างชัดเจน พร้อมปรับความดังชดเชยตามการได้ยินของหูมนุษย์</p>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('test-tab', this)">
+            🎹 1. แผงปุ่มทดสอบความถี่ (Frequency Studio)
+        </button>
+        <button class="tab-btn" onclick="switchTab('sweep-tab', this)">
+            🌀 2. Audio Sweep (20Hz - 20kHz)
+        </button>
+        <button class="tab-btn" onclick="switchTab('quiz-tab', this)">
+            🎮 3. เกมทายย่านเสียง (Quiz Game)
+        </button>
+    </div>
+
+    <!-- DISPLAY SCREEN (SHARED) -->
+    <div class="display-screen">
+        <div class="freq-tag-display" id="freq-tag-label">พร้อมสำหรับการทดสอบเสียง</div>
+        <div class="freq-readout" id="main-freq-display">-- Hz</div>
+        <div class="spectrum-bar-wrap">
+            <div class="spectrum-pointer" id="main-pointer" style="display:none;"></div>
+        </div>
+        <div class="spectrum-labels">
+            <span>20Hz</span>
+            <span>60Hz</span>
+            <span>250Hz</span>
+            <span>1kHz</span>
+            <span>4kHz</span>
+            <span>10kHz</span>
+            <span>20kHz</span>
+        </div>
+    </div>
+
+    <!-- TAB 1: FREQUENCY STUDIO BUTTONS -->
+    <div id="test-tab" class="tab-content active">
+        <!-- Manual Frequency Slider -->
+        <div class="slider-box">
+            <span style="font-size:14px; font-weight:bold; white-space:nowrap;">🎚️ สไลเดอร์ปรับความถี่แบบละเอียด:</span>
+            <input type="range" id="manual-freq-slider" min="20" max="20000" step="1" value="1000" oninput="onSliderChange(this.value)">
+            <button style="background:var(--accent-color); border:none; color:#fff; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:bold;" onclick="toggleSliderTone()">เปิด/ปิด เสียงสไลเดอร์</button>
+        </div>
+
+        <!-- Play Mode Setting -->
+        <div class="mode-toggle">
+            <span>⚙️ โหมดการเล่นเสียงเมื่อกดปุ่ม:</span>
+            <button class="mode-btn active" id="mode-pulse-btn" onclick="setPlayMode('pulse')">⏱️ กดฟังแป๊บเดียว (2 วินาที)</button>
+            <button class="mode-btn" id="mode-hold-btn" onclick="setPlayMode('hold')">🔄 เล่นต่อเนื่อง (กดซ้ำเพื่อปิด)</button>
+        </div>
+
+        <!-- CATEGORY 1: SUB-BASS -->
+        <div class="category-group">
+            <div class="category-header">
+                <span style="color:var(--subbass-color);">🔴 1. ย่าน Sub-Bass (20 - 60 Hz) - เสียงเบสต่ำลึก / แรงสั่นสะเทือน</span>
+                <div class="category-actions">
+                    <button class="band-demo-btn" style="--band-color:var(--subbass-color);" onclick="playBandDemo('subbass', this)">🔊 ฟังเสียงย่านนี้</button>
+                    <span class="cat-badge" style="background:var(--subbass-color);">เบสต่ำลึก</span>
+                </div>
+            </div>
+            <div class="btn-grid">
+                <button class="freq-btn" data-freq="20" onclick="playButtonTone(20, '20 Hz', 'Sub-Bass ต่ำสุด (ขีดจำกัดหูมนุษย์)', this)">
+                    <span class="hz-title">20 Hz</span>
+                    <span class="hz-sub">ขีดจำกัดเสียงต่ำ</span>
+                </button>
+                <button class="freq-btn" data-freq="30" onclick="playButtonTone(30, '30 Hz', 'Sub-Bass สั่นสะเทือนลึก', this)">
+                    <span class="hz-title">30 Hz</span>
+                    <span class="hz-sub">แรงสั่นสะเทือน</span>
+                </button>
+                <button class="freq-btn" data-freq="40" onclick="playButtonTone(40, '40 Hz', 'Sub-Bass ฐานซับวูฟเฟอร์', this)">
+                    <span class="hz-title">40 Hz</span>
+                    <span class="hz-sub">ฐานซับวูฟเฟอร์</span>
+                </button>
+                <button class="freq-btn" data-freq="50" onclick="playButtonTone(50, '50 Hz', 'Sub-Bass กระเดื่องลึก', this)">
+                    <span class="hz-title">50 Hz</span>
+                    <span class="hz-sub">กระเดื่องเบสลึก</span>
+                </button>
+                <button class="freq-btn" data-freq="60" onclick="playButtonTone(60, '60 Hz', 'Sub-Bass แน่นปะทะ', this)">
+                    <span class="hz-title">60 Hz</span>
+                    <span class="hz-sub">แรงปะทะแน่น</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- CATEGORY 2: BASS -->
+        <div class="category-group">
+            <div class="category-header">
+                <span style="color:var(--bass-color);">🟠 2. ย่าน Bass (80 - 250 Hz) - เสียงเบสหลัก / เนื้อเสียงกระเดื่อง</span>
+                <div class="category-actions">
+                    <button class="band-demo-btn" style="--band-color:var(--bass-color);" onclick="playBandDemo('bass', this)">🔊 ฟังเสียงย่านนี้</button>
+                    <span class="cat-badge" style="background:var(--bass-color);">เบสหลัก</span>
+                </div>
+            </div>
+            <div class="btn-grid">
+                <button class="freq-btn" data-freq="80" onclick="playButtonTone(80, '80 Hz', 'Bass หัวกระเดื่องแน่น', this)">
+                    <span class="hz-title">80 Hz</span>
+                    <span class="hz-sub">หัวกระเดื่องกลอง</span>
+                </button>
+                <button class="freq-btn" data-freq="100" onclick="playButtonTone(100, '100 Hz', 'Bass ความอุ่นของกีตาร์เบส', this)">
+                    <span class="hz-title">100 Hz</span>
+                    <span class="hz-sub">ความอุ่นเบส</span>
+                </button>
+                <button class="freq-btn" data-freq="125" onclick="playButtonTone(125, '125 Hz', 'Bass กีตาร์เบสหลัก', this)">
+                    <span class="hz-title">125 Hz</span>
+                    <span class="hz-sub">กีตาร์เบสหลัก</span>
+                </button>
+                <button class="freq-btn" data-freq="160" onclick="playButtonTone(160, '160 Hz', 'Upper Bass ฐานเสียงร้องผู้ชาย', this)">
+                    <span class="hz-title">160 Hz</span>
+                    <span class="hz-sub">ฐานเสียงร้องชาย</span>
+                </button>
+                <button class="freq-btn" data-freq="200" onclick="playButtonTone(200, '200 Hz', 'Upper Bass เนื้อเสียงร้องหนา', this)">
+                    <span class="hz-title">200 Hz</span>
+                    <span class="hz-sub">เนื้อเสียงหนา</span>
+                </button>
+                <button class="freq-btn" data-freq="250" onclick="playButtonTone(250, '250 Hz', 'Low-Mid ฐานเครื่องดนตรี', this)">
+                    <span class="hz-title">250 Hz</span>
+                    <span class="hz-sub">ฐานเครื่องดนตรี</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- CATEGORY 3: MIDRANGE -->
+        <div class="category-group">
+            <div class="category-header">
+                <span style="color:var(--mid-color);">🟡 3. ย่าน Midrange (315 - 2,000 Hz) - เสียงร้องมนุษย์ / เสียงดนตรีหลัก</span>
+                <div class="category-actions">
+                    <button class="band-demo-btn" style="--band-color:var(--mid-color);" onclick="playBandDemo('mid', this)">🔊 ฟังเสียงย่านนี้</button>
+                    <span class="cat-badge" style="background:var(--mid-color);">เสียงกลาง</span>
+                </div>
+            </div>
+            <div class="btn-grid">
+                <button class="freq-btn" data-freq="400" onclick="playButtonTone(400, '400 Hz', 'Midrange ตัวสแนร์และกีตาร์', this)">
+                    <span class="hz-title">400 Hz</span>
+                    <span class="hz-sub">ตัวกลองสแนร์</span>
+                </button>
+                <button class="freq-btn" data-freq="630" onclick="playButtonTone(630, '630 Hz', 'Midrange เนื้อเสียงร้องกลาง', this)">
+                    <span class="hz-title">630 Hz</span>
+                    <span class="hz-sub">เนื้อเสียงร้องกลาง</span>
+                </button>
+                <button class="freq-btn" data-freq="1000" onclick="playButtonTone(1000, '1.0 kHz', 'Midrange เสียงกลางหลักมนุษย์', this)">
+                    <span class="hz-title">1.0 kHz</span>
+                    <span class="hz-sub">กลางหลักมนุษย์</span>
+                </button>
+                <button class="freq-btn" data-freq="1600" onclick="playButtonTone(1600, '1.6 kHz', 'Upper-Mid ความพุ่งของเสียงร้อง', this)">
+                    <span class="hz-title">1.6 kHz</span>
+                    <span class="hz-sub">ความชัดเสียงร้อง</span>
+                </button>
+                <button class="freq-btn" data-freq="2000" onclick="playButtonTone(2000, '2.0 kHz', 'Upper-Mid ความคมชัด', this)">
+                    <span class="hz-title">2.0 kHz</span>
+                    <span class="hz-sub">ความคมชัดพุ่ง</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- CATEGORY 4: PRESENCE & TREBLE -->
+        <div class="category-group">
+            <div class="category-header">
+                <span style="color:var(--highmid-color);">🟢 4. ย่าน Presence & Treble (2.5k - 8 kHz) - ความคมพุ่ง / เสียงฉาบแฉ / ส-ซ</span>
+                <div class="category-actions">
+                    <button class="band-demo-btn" style="--band-color:var(--highmid-color);" onclick="playBandDemo('presence', this)">🔊 ฟังเสียงย่านนี้</button>
+                    <span class="cat-badge" style="background:var(--highmid-color);">เสียงแหลม</span>
+                </div>
+            </div>
+            <div class="btn-grid">
+                <button class="freq-btn" data-freq="2500" onclick="playButtonTone(2500, '2.5 kHz', 'Presence ความพุ่งหน้าเวที', this)">
+                    <span class="hz-title">2.5 kHz</span>
+                    <span class="hz-sub">ความพุ่งหน้าเวที</span>
+                </button>
+                <button class="freq-btn" data-freq="4000" onclick="playButtonTone(4000, '4.0 kHz', 'Presence รายละเอียดความใส', this)">
+                    <span class="hz-title">4.0 kHz</span>
+                    <span class="hz-sub">ความใสของเสียง</span>
+                </button>
+                <button class="freq-btn" data-freq="6300" onclick="playButtonTone(6300, '6.3 kHz', 'Treble เสียงพยัญชนะ ส/ซ', this)">
+                    <span class="hz-title">6.3 kHz</span>
+                    <span class="hz-sub">เสียงพยัญชนะ ส/ซ</span>
+                </button>
+                <button class="freq-btn" data-freq="8000" onclick="playButtonTone(8000, '8.0 kHz', 'Treble เสียงฉาบแฉกลอง', this)">
+                    <span class="hz-title">8.0 kHz</span>
+                    <span class="hz-sub">เสียงฉาบแฉดนตรี</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- CATEGORY 5: HIGH TREBLE & AIR -->
+        <div class="category-group">
+            <div class="category-header">
+                <span style="color:var(--air-color);">🔵 5. ย่าน High Treble & Air Zone (10k - 20 kHz) - ปลายเสียงแหลมสูง / ความโปร่ง</span>
+                <div class="category-actions">
+                    <button class="band-demo-btn" style="--band-color:var(--air-color);" onclick="playBandDemo('air', this)">🔊 ฟังเสียงย่านนี้</button>
+                    <span class="cat-badge" style="background:var(--air-color); color:#fff;">แหลมสูงโปร่ง</span>
+                </div>
+            </div>
+            <div class="btn-grid">
+                <button class="freq-btn" data-freq="10000" onclick="playButtonTone(10000, '10.0 kHz', 'Air Zone ปลายเสียงแหลม', this)">
+                    <span class="hz-title">10.0 kHz</span>
+                    <span class="hz-sub">ปลายเสียงแหลม</span>
+                </button>
+                <button class="freq-btn" data-freq="12500" onclick="playButtonTone(12500, '12.5 kHz', 'Air Zone ความพริ้วไหวโปร่ง', this)">
+                    <span class="hz-title">12.5 kHz</span>
+                    <span class="hz-sub">ความพริ้วไหวโปร่ง</span>
+                </button>
+                <button class="freq-btn" data-freq="15000" onclick="playButtonTone(15000, '15.0 kHz', 'Air Zone เสียงแหลมสูงมาก', this)">
+                    <span class="hz-title">15.0 kHz</span>
+                    <span class="hz-sub">เสียงแหลมสูงมาก</span>
+                </button>
+                <button class="freq-btn" data-freq="18000" onclick="playButtonTone(18000, '18.0 kHz', 'Air Zone ขีดจำกัดหูผู้ใหญ่', this)">
+                    <span class="hz-title">18.0 kHz</span>
+                    <span class="hz-sub">ขีดจำกัดหูผู้ใหญ่</span>
+                </button>
+                <button class="freq-btn" data-freq="20000" onclick="playButtonTone(20000, '20.0 kHz', 'Air Zone ขีดจำกัดสูงสุดมนุษย์', this)">
+                    <span class="hz-title">20.0 kHz</span>
+                    <span class="hz-sub">ขีดจำกัดสูงสุด</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: AUDIO SWEEP DEMO -->
+    <div id="sweep-tab" class="tab-content">
+        <div class="section-card">
+            <div class="section-title">🌀 จำลอง Audio Sweep เหมือนในคลิป YouTube (20Hz - 20,000Hz)</div>
+            <p style="font-size:14px; color:#8b949e; margin-bottom:15px;">
+                กดปุ่มเพื่อเล่นเสียงกวาดคลื่นความถี่อย่างต่อเนื่องตั้งแต่ 20 Hz ไปจนถึง 20,000 Hz เหมาะสำหรับเปิดทดสอบความสามารถในการได้ยินของนักเรียนทั้งห้องเรียน
+            </p>
+            <div style="display:flex; gap:10px;">
+                <button style="flex:1; padding:15px; background:var(--accent-color); color:#fff; border:none; border-radius:10px; font-size:16px; font-weight:bold; cursor:pointer;" onclick="startAudioSweepDemo(10)">
+                    ▶️ เล่น Sweep (ความยาว 10 วินาที)
+                </button>
+                <button style="flex:1; padding:15px; background:#7b2cbf; color:#fff; border:none; border-radius:10px; font-size:16px; font-weight:bold; cursor:pointer;" onclick="startAudioSweepDemo(20)">
+                    ▶️ เล่น Sweep แบบช้า (ความยาว 20 วินาที)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: QUIZ GAME -->
+    <div id="quiz-tab" class="tab-content">
+        <div class="quiz-stats">
+            <div>รอบที่ทำ: <span class="stat-val" id="q-total">0</span></div>
+            <div>ตอบถูก: <span class="stat-val" style="color:#3fb950;" id="q-score">0</span></div>
+            <div>ความแม่นยำ: <span class="stat-val" id="q-acc">0%</span></div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-bottom:20px;">
+            <button style="flex:1; padding:14px; background:var(--accent-color); color:#fff; border:none; border-radius:10px; font-weight:bold; font-size:16px; cursor:pointer;" onclick="nextQuizQuestion()">
+                🎲 สุ่มเสียงโจทย์ทายความถี่
+            </button>
+            <button id="btn-quiz-repeat" style="padding:14px 20px; background:#d29922; color:#000; border:none; border-radius:10px; font-weight:bold; cursor:pointer;" onclick="replayQuizAudio()" disabled>
+                🔊 ฟังซ้ำ (<span id="quiz-repeat-left">3</span>/3)
+            </button>
+        </div>
+
+        <div class="section-card">
+            <div style="font-size:14px; color:#8b949e; margin-bottom:12px;">เลือกทายความถี่เสียงที่คุณได้ยิน (1 ใน 2 ช้อยส์):</div>
+            <div class="choices-grid" id="quiz-choices-container">
+                <button class="choice-btn" disabled>--</button>
+                <button class="choice-btn" disabled>--</button>
+            </div>
+        </div>
+
+        <div id="quiz-feedback" class="feedback-box">
+            <div id="q-fb-title" style="font-size:18px; font-weight:bold; margin-bottom:8px;"></div>
+            <div id="q-fb-body"></div>
+        </div>
+    </div>
+
+    <!-- MASTER CONTROL BAR -->
+    <div class="master-bar">
+        <div style="display:flex; align-items:center; gap:10px; font-size:14px;">
+            <span>🔊 ระดับเสียง Master:</span>
+            <input type="range" id="master-vol-slider" min="0" max="1" step="0.05" value="0.3" onchange="changeMasterVolume(this.value)">
+            <span id="master-vol-label" style="font-weight:bold; color:var(--accent-color);">30%</span>
+        </div>
+        <button class="btn-stop-all" onclick="stopAllAudio()">⏹️ หยุดเสียงทั้งหมด</button>
+    </div>
+</div>
+
+<script>
+    let audioCtx = null;
+    let masterGain = null;
+    let masterVol = 0.3;
+    let activeOscillator = null;
+    let activeToneGain = null;
+    let activeBandSources = [];
+    let currentBandBtn = null;
+    let bandStopTimer = null;
+    let sweepInterval = null;
+    
+    let playMode = 'pulse'; // 'pulse' (2 sec) or 'hold' (continuous)
+    let currentPlayingBtn = null;
+    let currentPlayingFreq = null;
+    let isSliderPlaying = false;
+
+    // Quiz State
+    let currentQuiz = null;
+    let quizReplays = 3;
+    let quizTotal = 0;
+    let quizCorrect = 0;
+
+    const quizFreqData = [
+        { freq: 30, name: "30 Hz", label: "Sub-Bass ลึก", desc: "ย่านเบสต่ำสุด สัมผัสเป็นแรงสั่นสะเทือน ต้องใช้ตู้ซับวูฟเฟอร์" },
+        { freq: 60, name: "60 Hz", label: "Sub-Bass แน่น", desc: "ย่านแรงปะทะของกระเดื่องและซับเบส" },
+        { freq: 125, name: "125 Hz", label: "Bass หลัก", desc: "ย่านฐานความหนาของกีตาร์เบสและกระเดื่อง" },
+        { freq: 250, name: "250 Hz", label: "Low-Mid", desc: "ย่านฐานเสียงร้องมนุษย์ ถ้าตัดออกเสียงจะบาง" },
+        { freq: 500, name: "500 Hz", label: "Midrange กลางต่ำ", desc: "ย่านเนื้อเสียงกีตาร์และกลองสแนร์" },
+        { freq: 1000, name: "1.0 kHz", label: "Midrange เสียงกลาง", desc: "จุดศูนย์กลางความถี่เสียงพูดมนุษย์" },
+        { freq: 2500, name: "2.5 kHz", label: "Upper-Mid กลางสูง", desc: "ย่านความพุ่งคมของเสียงร้อง" },
+        { freq: 5000, name: "5.0 kHz", label: "Presence", desc: "ย่านความคมใสและมิติเครื่องดนตรี" },
+        { freq: 8000, name: "8.0 kHz", label: "Treble แหลม", desc: "ย่านเสียงฉาบแฉ และพยัญชนะ ส/ซ" },
+        { freq: 12500, name: "12.5 kHz", label: "Air Zone แหลมสูง", desc: "ย่านปลายเสียงแหลม ให้ความรู้สึกโปร่งพริ้ว" }
+    ];
+
+    async function initAudio() {
+        if (!audioCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+            masterGain = audioCtx.createGain();
+            masterGain.gain.setValueAtTime(masterVol, audioCtx.currentTime);
+            masterGain.connect(audioCtx.destination);
+        }
+        if (audioCtx.state === 'suspended') {
+            await audioCtx.resume();
+        }
+    }
+
+    function changeMasterVolume(val) {
+        masterVol = parseFloat(val);
+        document.getElementById('master-vol-label').innerText = Math.round(masterVol * 100) + '%';
+        if (masterGain && audioCtx) {
+            masterGain.gain.setValueAtTime(masterVol, audioCtx.currentTime);
+        }
+    }
+
+    // Human Equal Loudness Compensation (Fletcher-Munson curve approximation)
+    function getVolumeFactor(freq) {
+        if (freq < 40) return 2.2;
+        if (freq < 80) return 1.6;
+        if (freq < 150) return 1.2;
+        if (freq > 6000 && freq <= 10000) return 0.7;
+        if (freq > 10000) return 0.5;
+        return 1.0;
+    }
+
+    function stopAllAudio() {
+        if (activeOscillator) {
+            try { activeOscillator.stop(); } catch(e){}
+            activeOscillator = null;
+        }
+        activeBandSources.forEach(source => {
+            try { source.stop(); } catch(e){}
+        });
+        activeBandSources = [];
+        if (bandStopTimer) {
+            clearTimeout(bandStopTimer);
+            bandStopTimer = null;
+        }
+        if (sweepInterval) {
+            clearInterval(sweepInterval);
+            sweepInterval = null;
+        }
+        document.querySelectorAll('.freq-btn').forEach(btn => btn.classList.remove('playing'));
+        document.querySelectorAll('.band-demo-btn').forEach(btn => btn.classList.remove('playing'));
+        currentPlayingBtn = null;
+        currentBandBtn = null;
+        currentPlayingFreq = null;
+        isSliderPlaying = false;
+        updateUI('--', 'หยุดเสียงแล้ว', false);
+    }
+
+    function setPlayMode(mode) {
+        playMode = mode;
+        document.getElementById('mode-pulse-btn').classList.toggle('active', mode === 'pulse');
+        document.getElementById('mode-hold-btn').classList.toggle('active', mode === 'hold');
+        stopAllAudio();
+    }
+
+    function freqToPercent(freq) {
+        const minF = Math.log10(20);
+        const maxF = Math.log10(20000);
+        const curF = Math.log10(Math.max(20, Math.min(20000, freq)));
+        return ((curF - minF) / (maxF - minF)) * 100;
+    }
+
+    function updateUI(freq, tagText, showPointer = true) {
+        const readout = document.getElementById('main-freq-display');
+        const tag = document.getElementById('freq-tag-label');
+        const pointer = document.getElementById('main-pointer');
+
+        tag.innerText = tagText || '';
+
+        if (freq === '--') {
+            readout.innerText = '-- Hz';
+            pointer.style.display = 'none';
+        } else {
+            readout.innerText = freq >= 1000 ? (freq/1000).toFixed(1) + ' kHz' : Math.round(freq) + ' Hz';
+            if (showPointer) {
+                pointer.style.display = 'block';
+                pointer.style.left = freqToPercent(freq) + '%';
+            } else {
+                pointer.style.display = 'none';
+            }
+        }
+    }
+
+    async function playPureTone(freq, duration = null) {
+        await initAudio();
+
+        const osc = audioCtx.createOscillator();
+        const toneGain = audioCtx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+        const volFactor = getVolumeFactor(freq);
+        const targetVol = masterVol * volFactor;
+
+        toneGain.gain.setValueAtTime(0, audioCtx.currentTime);
+        toneGain.gain.linearRampToValueAtTime(targetVol, audioCtx.currentTime + 0.05);
+
+        if (duration) {
+            toneGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        }
+
+        osc.connect(toneGain);
+        toneGain.connect(masterGain);
+
+        osc.start();
+        if (duration) {
+            osc.stop(audioCtx.currentTime + duration);
+            setTimeout(() => {
+                if (currentPlayingFreq === freq) {
+                    stopAllAudio();
+                }
+            }, duration * 1000);
+        }
+
+        activeOscillator = osc;
+        activeToneGain = toneGain;
+        currentPlayingFreq = freq;
+    }
+
+    async function playButtonTone(freq, title, desc, btnElem) {
+        if (currentPlayingBtn === btnElem && playMode === 'hold') {
+            stopAllAudio();
+            return;
+        }
+
+        stopAllAudio();
+        await playPureTone(freq, playMode === 'pulse' ? 2.0 : null);
+        btnElem.classList.add('playing');
+        currentPlayingBtn = btnElem;
+
+        updateUI(freq, `${title} - ${desc}`, true);
+    }
+
+    function onSliderChange(val) {
+        const freq = parseFloat(val);
+        document.getElementById('manual-freq-slider').value = freq;
+        updateUI(freq, 'ปรับด้วยสไลเดอร์', true);
+
+        if (isSliderPlaying && activeOscillator && audioCtx) {
+            activeOscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            const volFactor = getVolumeFactor(freq);
+            activeToneGain.gain.setValueAtTime(masterVol * volFactor, audioCtx.currentTime);
+        }
+    }
+
+    async function toggleSliderTone() {
+        if (isSliderPlaying) {
+            stopAllAudio();
+        } else {
+            const freq = parseFloat(document.getElementById('manual-freq-slider').value);
+            stopAllAudio();
+            await playPureTone(freq, null);
+            isSliderPlaying = true;
+            updateUI(freq, 'กำลังเล่นเสียงจากสไลเดอร์', true);
+        }
+    }
+
+    const bandDemoData = {
+        subbass: { freq: 45, label: 'ตัวอย่าง Sub-Bass: แรงสั่นลึกคล้ายซับวูฟเฟอร์' },
+        bass: { freq: 120, label: 'ตัวอย่าง Bass: เนื้อเบสและแรงปะทะของกระเดื่อง' },
+        mid: { freq: 900, label: 'ตัวอย่าง Midrange: เนื้อเสียงคล้ายเสียงร้องและเครื่องดนตรี' },
+        presence: { freq: 5000, label: 'ตัวอย่าง Presence & Treble: ความคมชัดและเสียงฉาบ' },
+        air: { freq: 14000, label: 'ตัวอย่าง Air Zone: ปลายเสียงโปร่งและลมหายใจ' }
+    };
+
+    function trackBandSource(source) {
+        activeBandSources.push(source);
+        return source;
+    }
+
+    function makeNoiseSource(duration) {
+        const length = Math.ceil(audioCtx.sampleRate * duration);
+        const buffer = audioCtx.createBuffer(1, length, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < length; i++) data[i] = Math.random() * 2 - 1;
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        return trackBandSource(source);
+    }
+
+    function schedulePulses(gainNode, start, pulseTimes, peak, attack = 0.025, decay = 0.32) {
+        gainNode.gain.setValueAtTime(0.0001, start);
+        pulseTimes.forEach(offset => {
+            gainNode.gain.setValueAtTime(0.0001, start + offset);
+            gainNode.gain.linearRampToValueAtTime(peak, start + offset + attack);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, start + offset + decay);
+        });
+    }
+
+    async function playBandDemo(type, btnElem) {
+        const shouldStop = currentBandBtn === btnElem && btnElem.classList.contains('playing');
+        stopAllAudio();
+        if (shouldStop) return;
+
+        await initAudio();
+        const start = audioCtx.currentTime + 0.02;
+        const duration = 3.2;
+        const mix = audioCtx.createGain();
+        mix.gain.setValueAtTime(0.7, start);
+        mix.connect(masterGain);
+
+        if (type === 'subbass') {
+            const osc = trackBandSource(audioCtx.createOscillator());
+            const env = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(52, start);
+            [0, .72, 1.44, 2.16].forEach(t => {
+                osc.frequency.setValueAtTime(52, start + t);
+                osc.frequency.exponentialRampToValueAtTime(36, start + t + .38);
+            });
+            schedulePulses(env, start, [0, .72, 1.44, 2.16], .5, .02, .48);
+            osc.connect(env).connect(mix);
+            osc.start(start); osc.stop(start + duration);
+        } else if (type === 'bass') {
+            const osc = trackBandSource(audioCtx.createOscillator());
+            const filter = audioCtx.createBiquadFilter();
+            const env = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(110, start);
+            filter.type = 'lowpass'; filter.frequency.value = 320; filter.Q.value = 1.2;
+            schedulePulses(env, start, [0, .58, 1.16, 1.74, 2.32], .38, .015, .42);
+            osc.connect(filter).connect(env).connect(mix);
+            osc.start(start); osc.stop(start + duration);
+        } else if (type === 'mid') {
+            const osc = trackBandSource(audioCtx.createOscillator());
+            const formantA = audioCtx.createBiquadFilter();
+            const formantB = audioCtx.createBiquadFilter();
+            const formantGainA = audioCtx.createGain();
+            const formantGainB = audioCtx.createGain();
+            const env = audioCtx.createGain();
+            osc.type = 'sawtooth'; osc.frequency.value = 165;
+            formantA.type = 'bandpass'; formantA.frequency.value = 750; formantA.Q.value = 4;
+            formantB.type = 'bandpass'; formantB.frequency.value = 1450; formantB.Q.value = 5;
+            formantGainA.gain.value = .42; formantGainB.gain.value = .28;
+            env.gain.setValueAtTime(.0001, start);
+            env.gain.linearRampToValueAtTime(.5, start + .12);
+            env.gain.setValueAtTime(.5, start + 2.55);
+            env.gain.exponentialRampToValueAtTime(.0001, start + 3.05);
+            osc.connect(formantA).connect(formantGainA).connect(env);
+            osc.connect(formantB).connect(formantGainB).connect(env);
+            env.connect(mix);
+            osc.start(start); osc.stop(start + duration);
+        } else if (type === 'presence') {
+            const noise = makeNoiseSource(duration);
+            const filter = audioCtx.createBiquadFilter();
+            const env = audioCtx.createGain();
+            filter.type = 'bandpass'; filter.frequency.value = 5200; filter.Q.value = .8;
+            schedulePulses(env, start, [0, .5, 1.05, 1.65, 2.25], .22, .008, .35);
+            noise.connect(filter).connect(env).connect(mix);
+            noise.start(start); noise.stop(start + duration);
+        } else {
+            const noise = makeNoiseSource(duration);
+            const filter = audioCtx.createBiquadFilter();
+            const env = audioCtx.createGain();
+            filter.type = 'highpass'; filter.frequency.value = 10500; filter.Q.value = .7;
+            env.gain.setValueAtTime(.0001, start);
+            env.gain.linearRampToValueAtTime(.16, start + .35);
+            env.gain.setValueAtTime(.16, start + 2.35);
+            env.gain.exponentialRampToValueAtTime(.0001, start + 3.05);
+            noise.connect(filter).connect(env).connect(mix);
+            noise.start(start); noise.stop(start + duration);
+        }
+
+        currentBandBtn = btnElem;
+        btnElem.classList.add('playing');
+        const demo = bandDemoData[type];
+        updateUI(demo.freq, demo.label, true);
+        bandStopTimer = setTimeout(() => {
+            if (currentBandBtn === btnElem) stopAllAudio();
+        }, duration * 1000 + 100);
+    }
+
+    // SWEEP DEMO
+    async function startAudioSweepDemo(durationSec = 10) {
+        await initAudio();
+        stopAllAudio();
+
+        let startFreq = 20;
+        let endFreq = 20000;
+        let startTime = audioCtx.currentTime;
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(startFreq, startTime);
+        osc.frequency.exponentialRampToValueAtTime(endFreq, startTime + durationSec);
+
+        gain.gain.setValueAtTime(masterVol * 1.5, startTime);
+        gain.gain.linearRampToValueAtTime(masterVol * 0.4, startTime + durationSec);
+
+        osc.connect(gain);
+        gain.connect(masterGain);
+
+        osc.start(startTime);
+        osc.stop(startTime + durationSec);
+        activeOscillator = osc;
+
+        sweepInterval = setInterval(() => {
+            let elapsed = audioCtx.currentTime - startTime;
+            if (elapsed >= durationSec) {
+                stopAllAudio();
+            } else {
+                let progress = elapsed / durationSec;
+                let currentF = startFreq * Math.pow(endFreq / startFreq, progress);
+                updateUI(currentF, 'กำลังกวาดคลื่นความถี่ (Audio Sweep)', true);
+            }
+        }, 50);
+    }
+
+    // QUIZ LOGIC
+    async function nextQuizQuestion() {
+        await initAudio();
+        stopAllAudio();
+
+        quizReplays = 3;
+        document.getElementById('quiz-repeat-left').innerText = quizReplays;
+        document.getElementById('btn-quiz-repeat').disabled = false;
+        document.getElementById('quiz-feedback').style.display = 'none';
+
+        const targetIndex = Math.floor(Math.random() * quizFreqData.length);
+        const target = quizFreqData[targetIndex];
+
+        let wrongIndex;
+        do {
+            wrongIndex = Math.floor(Math.random() * quizFreqData.length);
+        } while (wrongIndex === targetIndex);
+        const wrong = quizFreqData[wrongIndex];
+
+        currentQuiz = { target, wrong };
+
+        updateUI('?', 'โจทย์ข้อทายเสียง: ฟังเสียงแล้วทายย่านความถี่', false);
+        playPureTone(target.freq, 2.0);
+
+        const choices = [target, wrong].sort(() => Math.random() - 0.5);
+        const container = document.getElementById('quiz-choices-container');
+        container.innerHTML = '';
+
+        choices.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'choice-btn';
+            btn.innerText = opt.name;
+            btn.onclick = () => checkQuizAnswer(opt);
+            container.appendChild(btn);
+        });
+    }
+
+    function replayQuizAudio() {
+        if (quizReplays > 0 && currentQuiz) {
+            stopAllAudio();
+            playPureTone(currentQuiz.target.freq, 2.0);
+            quizReplays--;
+            document.getElementById('quiz-repeat-left').innerText = quizReplays;
+            if (quizReplays <= 0) {
+                document.getElementById('btn-quiz-repeat').disabled = true;
+            }
+        }
+    }
+
+    function checkQuizAnswer(selected) {
+        quizTotal++;
+        const isCorrect = (selected.freq === currentQuiz.target.freq);
+        if (isCorrect) quizCorrect++;
+
+        document.getElementById('q-total').innerText = quizTotal;
+        document.getElementById('q-score').innerText = quizCorrect;
+        document.getElementById('q-acc').innerText = Math.round((quizCorrect / quizTotal) * 100) + '%';
+
+        document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+        updateUI(currentQuiz.target.freq, 'เฉลยตำแหน่งความถี่โจทย์', true);
+
+        const fb = document.getElementById('quiz-feedback');
+        const fbTitle = document.getElementById('q-fb-title');
+        const fbBody = document.getElementById('q-fb-body');
+
+        if (isCorrect) {
+            fbTitle.innerHTML = '<span style="color:#3fb950;">🎉 ตอบถูกต้องครับ!</span>';
+        } else {
+            fbTitle.innerHTML = '<span style="color:#f85149;">❌ ตอบผิดครับ!</span>';
+        }
+
+        fbBody.innerHTML = `
+            <div><b>เฉลยข้อที่ถูก:</b> <span style="color:var(--accent-color); font-weight:bold;">${currentQuiz.target.name} (${currentQuiz.target.label})</span></div>
+            <div style="margin-top:6px; font-size:13px; color:#c9d1d9;">💡 <b>คำอธิบาย:</b> ${currentQuiz.target.desc}</div>
+        `;
+        fb.style.display = 'block';
+    }
+
+    function switchTab(tabId, btnElement) {
+        stopAllAudio();
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+        document.getElementById(tabId).classList.add('active');
+        btnElement.classList.add('active');
+    }
+</script>
+
+</body>
+</html>

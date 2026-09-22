@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Jingle Note: Rhythm Runner</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Kanit:wght@400;600;700;800&display=swap');
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    body {
+      font-family: 'Kanit', sans-serif;
+      background-color: #0d0d0d;
+      color: #121212;
+      overflow: hidden;
+    }
+
+    .retro-font {
+      font-family: 'Courier Prime', monospace;
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.4); opacity: 0; }
+      55% { transform: scale(1.18); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .pop-in {
+      animation: popIn 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    @keyframes pulseRing {
+      0% { transform: scale(0.9); opacity: 0.9; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+    .pulse-ring {
+      animation: pulseRing 0.5s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen w-screen p-2 sm:p-4 bg-neutral-950">
+
+  <!-- Main Game Container (Minimalist B&W Frame) -->
+  <div id="game-wrapper" class="relative w-full max-w-3xl h-[86vh] max-h-[620px] bg-white border-4 border-black rounded-3xl shadow-[8px_8px_0px_0px_rgba(255,255,255,0.2)] overflow-hidden flex flex-col mx-auto">
+    
+    <!-- Canvas for Minimalist Staff & Note Character -->
+    <canvas id="gameCanvas" class="w-full h-full block bg-white cursor-pointer"></canvas>
+
+    <!-- Top HUD Bar -->
+    <div class="absolute top-3 left-4 right-4 z-20 flex justify-between items-center pointer-events-none text-black">
+      <div class="flex items-center space-x-2.5 bg-white/95 px-3.5 py-1.5 rounded-2xl border-2 border-black shadow-sm">
+        <span class="text-xl">🔔</span>
+        <div>
+          <div class="text-[9px] uppercase tracking-wider font-extrabold text-neutral-500">จังหวะผ่าน (NOTES)</div>
+          <div id="hud-score" class="retro-font text-base sm:text-lg font-bold leading-none">0 / 25</div>
+        </div>
+      </div>
+
+      <!-- Realtime Judgment Badge -->
+      <div id="judgment-badge" class="transition-all duration-150 transform scale-90 opacity-0 pointer-events-none">
+        <span id="judgment-text" class="text-xs sm:text-base font-black px-4 py-1.5 rounded-full border-2 border-black bg-black text-white shadow-md">
+          PERFECT! ♫
+        </span>
+      </div>
+
+      <div class="flex items-center space-x-2 bg-white/95 px-3 py-1.5 rounded-2xl border-2 border-black shadow-sm">
+        <div class="text-right">
+          <div class="text-[9px] uppercase tracking-wider font-extrabold text-neutral-500">COMBO</div>
+          <div id="hud-combo" class="retro-font text-base sm:text-lg font-bold leading-none">x0</div>
+        </div>
+        <button id="btn-audio-toggle" class="pointer-events-auto p-1.5 text-xs hover:bg-neutral-100 rounded-lg border border-neutral-300 transition">
+          🔊
+        </button>
+      </div>
+    </div>
+
+    <!-- Song Progress & Bar Tracker -->
+    <div class="absolute top-16 left-1/2 -translate-x-1/2 z-20 pointer-events-none flex flex-col items-center">
+      <div class="flex items-center space-x-2">
+        <div id="metronome-dot" class="w-3 h-3 rounded-full border-2 border-black bg-neutral-200 transition-colors duration-100"></div>
+        <div class="w-48 sm:w-72 bg-neutral-100 h-2.5 rounded-full border border-black overflow-hidden relative">
+          <div id="progress-bar" class="h-full bg-black w-0 transition-all duration-100"></div>
+        </div>
+      </div>
+      <div id="lyrics-guide" class="text-[11px] sm:text-xs font-bold text-neutral-800 mt-1.5 uppercase tracking-wide bg-white/95 px-3.5 py-0.5 rounded-full border border-black shadow-sm">
+        ♪ Jingle Bells (E - E - E)
+      </div>
+    </div>
+
+    <!-- 4-BEAT COUNTDOWN OVERLAY (4, 3, 2, 1, GO!) -->
+    <div id="countdown-overlay" class="hidden absolute inset-0 z-30 bg-white/85 backdrop-blur-[2px] flex flex-col items-center justify-center pointer-events-none">
+      <div class="relative flex flex-col items-center">
+        <div id="countdown-ring" class="absolute -inset-10 border-4 border-black rounded-full opacity-0 pointer-events-none"></div>
+        <div id="countdown-number" class="text-8xl sm:text-9xl font-black retro-font text-black leading-none drop-shadow">
+          4
+        </div>
+        <div id="countdown-subtext" class="text-xs sm:text-sm font-bold uppercase tracking-widest text-neutral-800 mt-4 px-4 py-1.5 border-2 border-black rounded-full bg-white shadow">
+          นับจังหวะ 4 เคาะก่อนเริ่ม... เตรียมกระโดด!
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Controls Hint -->
+    <div class="absolute bottom-3 left-4 right-4 z-20 pointer-events-none flex justify-center">
+      <div class="bg-black/5 border-2 border-dashed border-black/30 rounded-2xl px-5 py-2 flex items-center space-x-2 backdrop-blur-[1px]">
+        <span class="text-sm">⚡</span>
+        <span class="text-xs font-semibold text-neutral-800">แตะหน้าจอ หรือกด [Space / ลูกศรขึ้น] เพื่อกระโดดให้ตรงจังหวะ</span>
+      </div>
+    </div>
+
+    <!-- Start Game Modal Screen -->
+    <div id="start-screen" class="absolute inset-0 z-30 bg-white/95 flex flex-col items-center justify-center p-6 text-black text-center backdrop-blur-sm">
+      <div class="w-16 h-16 mb-2 border-4 border-black rounded-full flex items-center justify-center text-3xl font-bold bg-neutral-50 shadow-md">
+        ♩
+      </div>
+      <h1 class="text-2xl sm:text-3xl font-black tracking-tight mb-1">JINGLE NOTE</h1>
+      <h2 class="text-xs sm:text-sm font-bold text-neutral-600 mb-4 uppercase tracking-wider">
+        Rhythm Runner (Jingle Bells Edition)
+      </h2>
+
+      <!-- Rule Box -->
+      <div class="bg-neutral-50 border-2 border-black rounded-2xl p-4 max-w-sm w-full text-left text-xs space-y-2 mb-6 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+        <div class="flex items-center space-x-2">
+          <span class="text-base">⏱️</span>
+          <span><b>มีเคาะนำ 4 จังหวะ:</b> ฟังเสียงเคาะ 1, 2, 3, 4 เพื่อจับจังหวะเพลงก่อนวิ่ง</span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <span class="text-base">🎶</span>
+          <span><b>กระโดดข้ามโน้ตดนตรี:</b> โน้ตเพลงจะวิ่งเข้ามาตามทำนอง Jingle Bells</span>
+        </div>
+        <div class="flex items-center space-x-2 text-rose-800 font-bold">
+          <span class="text-base">💀</span>
+          <span><b>พลาดจังหวะ = GAME OVER ทันที:</b> ถ้ากดเร็วไป ช้าไป หรือไม่โดดข้ามโน้ตจะสะดุดล้มตาย!</span>
+        </div>
+      </div>
+
+      <button id="btn-start" class="px-8 py-3.5 bg-black text-white text-base font-bold rounded-2xl border-2 border-black hover:bg-neutral-800 active:scale-95 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,0.6)]">
+        เริ่มเล่น (เคาะ 4 3 2 1 GO!)
+      </button>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameover-screen" class="hidden absolute inset-0 z-30 bg-black/90 flex flex-col items-center justify-center p-6 text-white text-center backdrop-blur-md">
+      <div class="w-14 h-14 mb-2 border-4 border-white rounded-full flex items-center justify-center text-2xl font-bold bg-neutral-900">
+        💀
+      </div>
+      <h2 class="text-2xl sm:text-3xl font-black tracking-tight mb-1">หลุดจังหวะซะแล้ว! (GAME OVER)</h2>
+      <p id="gameover-reason" class="text-xs sm:text-sm font-medium text-neutral-300 mb-4">
+        โดดผิดจังหวะ หรือสะดุดชนโน้ตดนตรี
+      </p>
+
+      <div class="bg-neutral-950 border-2 border-neutral-700 rounded-2xl p-4 max-w-xs w-full text-center mb-5 space-y-1">
+        <div class="text-xs uppercase text-neutral-400">จังหวะที่กระโดดผ่าน</div>
+        <div id="gameover-score" class="text-3xl font-black retro-font text-white">0 / 25</div>
+        <div class="text-xs text-neutral-400 pt-1 border-t border-neutral-800">
+          คอมโบสูงสุด: <span id="gameover-combo" class="font-bold text-white">0</span>
+        </div>
+      </div>
+
+      <button id="btn-restart" class="px-8 py-3 bg-white text-black text-sm font-bold rounded-2xl border-2 border-white hover:bg-neutral-200 active:scale-95 transition shadow-lg">
+        นับเคาะเริ่มใหม่อีกครั้ง (RETRY)
+      </button>
+    </div>
+
+    <!-- Victory Screen -->
+    <div id="victory-screen" class="hidden absolute inset-0 z-30 bg-white/95 flex flex-col items-center justify-center p-6 text-black text-center backdrop-blur-md">
+      <div class="w-16 h-16 mb-2 border-4 border-black rounded-full flex items-center justify-center text-3xl font-bold bg-neutral-100">
+        🏆
+      </div>
+      <h2 class="text-2xl sm:text-3xl font-black tracking-tight mb-1">PERFECT RUN! ผ่านครบเพลง!</h2>
+      <p class="text-xs sm:text-sm font-semibold text-neutral-700 mb-4">
+        ยอดเยี่ยมมาก! กระโดดข้ามโน้ต Jingle Bells ครบทุกจังหวะไม่พลาดแม้แต่ครั้งเดียว
+      </p>
+
+      <div class="bg-neutral-50 border-2 border-black rounded-2xl p-4 max-w-xs w-full text-center mb-5 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+        <div class="text-xs uppercase text-neutral-500">คะแนนเต็ม</div>
+        <div id="victory-score" class="text-3xl font-black retro-font">25 / 25</div>
+      </div>
+
+      <button id="btn-victory-restart" class="px-8 py-3 bg-black text-white text-sm font-bold rounded-2xl hover:bg-neutral-800 active:scale-95 transition">
+        เล่นใหม่อีกรอบ (PLAY AGAIN)
+      </button>
+    </div>
+
+  </div>
+
+  <footer class="text-neutral-400 text-[11px] mt-3 flex items-center space-x-2">
+    <span>Jingle Bells Chorus (124 BPM)</span>
+    <span>•</span>
+    <span>4-Beat Count-In</span>
+    <span>•</span>
+    <span>Monochrome Rhythm Runner</span>
+  </footer>
+
+  <script>
+    // Web Audio Synthesizer for Jingle Bells and Count-in Woodblocks
+    class JingleRhythmAudio {
+      constructor() {
+        this.ctx = null;
+        this.isMuted = false;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      getFreq(note) {
+        const table = {
+          'C4': 261.63, 'D4': 293.66, 'E4': 329.63, 'F4': 349.23,
+          'G4': 392.00, 'A4': 440.00, 'B4': 493.88, 'C5': 523.25
+        };
+        return table[note] || 329.63;
+      }
+
+      // Crisp Woodblock Metronome Click for 4, 3, 2, 1 Countdown
+      playWoodblock(isAccent = false) {
+        if (this.isMuted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'triangle';
+        const startFreq = isAccent ? 1200 : 750;
+        const endFreq = isAccent ? 480 : 300;
+
+        osc.frequency.setValueAtTime(startFreq, now);
+        osc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.04);
+
+        gain.gain.setValueAtTime(isAccent ? 0.45 : 0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.06);
+      }
+
+      // Authentic Christmas Bell Chime (FM Synthesis)
+      playBell(noteName, duration = 0.38) {
+        if (this.isMuted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const freq = this.getFreq(noteName);
+
+        // Carrier oscillator
+        const carrier = this.ctx.createOscillator();
+        const carrierGain = this.ctx.createGain();
+        carrier.type = 'sine';
+        carrier.frequency.setValueAtTime(freq, now);
+
+        // Modulator for bright bell harmonic
+        const modulator = this.ctx.createOscillator();
+        const modGain = this.ctx.createGain();
+        modulator.type = 'sine';
+        modulator.frequency.setValueAtTime(freq * 2.76, now);
+        modGain.gain.setValueAtTime(freq * 0.8, now);
+        modGain.gain.exponentialRampToValueAtTime(1, now + duration);
+
+        modulator.connect(modGain);
+        modGain.connect(carrier.frequency);
+
+        carrierGain.gain.setValueAtTime(0.32, now);
+        carrierGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+        carrier.connect(carrierGain);
+        carrierGain.connect(this.ctx.destination);
+
+        carrier.start(now);
+        modulator.start(now);
+        carrier.stop(now + duration);
+        modulator.stop(now + duration);
+      }
+
+      playJumpSfx() {
+        if (this.isMuted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(380, now);
+        osc.frequency.exponentialRampToValueAtTime(760, now + 0.09);
+
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.11);
+      }
+
+      playFailSfx() {
+        if (this.isMuted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.exponentialRampToValueAtTime(65, now + 0.35);
+
+        gain.gain.setValueAtTime(0.35, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.4);
+      }
+    }
+
+    const sound = new JingleRhythmAudio();
+
+    // Exact, universally known Jingle Bells Chorus melody:
+    // "Jin-gle bells, jin-gle bells, jin-gle all the way!
+    //  Oh what fun it is to ride in a one-horse o-pen sleigh, HEY!"
+    const JINGLE_BELLS_MELODY = [
+      // Measure 1: "Jin - gle bells"
+      { note: 'E4', beats: 1, text: 'JIN-' },
+      { note: 'E4', beats: 1, text: 'GLE' },
+      { note: 'E4', beats: 2, text: 'BELLS! 🔔' },
+
+      // Measure 2: "Jin - gle bells"
+      { note: 'E4', beats: 1, text: 'JIN-' },
+      { note: 'E4', beats: 1, text: 'GLE' },
+      { note: 'E4', beats: 2, text: 'BELLS! 🔔' },
+
+      // Measure 3: "Jin - gle all the way"
+      { note: 'E4', beats: 1, text: 'JIN-' },
+      { note: 'G4', beats: 1, text: 'GLE' },
+      { note: 'C4', beats: 1, text: 'ALL' },
+      { note: 'D4', beats: 1, text: 'THE' },
+      { note: 'E4', beats: 2, text: 'WAY! ✨' },
+
+      // Measure 4: "Oh what fun it is to ride"
+      { note: 'F4', beats: 1, text: 'OH' },
+      { note: 'F4', beats: 1, text: 'WHAT' },
+      { note: 'F4', beats: 1, text: 'FUN' },
+      { note: 'F4', beats: 1, text: 'IT' },
+      { note: 'F4', beats: 1, text: 'IS' },
+      { note: 'E4', beats: 1, text: 'TO' },
+      { note: 'E4', beats: 1, text: 'RIDE' },
+      { note: 'E4', beats: 1, text: 'IN' },
+
+      // Measure 5: "A one horse open sleigh, HEY!"
+      { note: 'D4', beats: 1, text: 'A' },
+      { note: 'D4', beats: 1, text: 'ONE' },
+      { note: 'E4', beats: 1, text: 'HORSE' },
+      { note: 'D4', beats: 1, text: 'O-PEN' },
+      { note: 'G4', beats: 2, text: 'SLEIGH! 🌟' }
+    ];
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const hudScore = document.getElementById('hud-score');
+    const hudCombo = document.getElementById('hud-combo');
+    const judgmentBadge = document.getElementById('judgment-badge');
+    const judgmentText = document.getElementById('judgment-text');
+    const progressBar = document.getElementById('progress-bar');
+    const metronomeDot = document.getElementById('metronome-dot');
+    const lyricsGuide = document.getElementById('lyrics-guide');
+    const countdownOverlay = document.getElementById('countdown-overlay');
+    const countdownNumber = document.getElementById('countdown-number');
+    const countdownRing = document.getElementById('countdown-ring');
+    const startScreen = document.getElementById('start-screen');
+    const gameoverScreen = document.getElementById('gameover-screen');
+    const gameoverReason = document.getElementById('gameover-reason');
+    const gameoverScore = document.getElementById('gameover-score');
+    const gameoverCombo = document.getElementById('gameover-combo');
+    const victoryScreen = document.getElementById('victory-screen');
+    const victoryScore = document.getElementById('victory-score');
+    const btnStart = document.getElementById('btn-start');
+    const btnRestart = document.getElementById('btn-restart');
+    const btnVictoryRestart = document.getElementById('btn-victory-restart');
+    const btnAudioToggle = document.getElementById('btn-audio-toggle');
+    const gameWrapper = document.getElementById('game-wrapper');
+
+    // Music Pace: 124 BPM
+    const BPM = 124;
+    const SECONDS_PER_BEAT = 60 / BPM;
+    const PIXELS_PER_BEAT = 155;
+
+    let gameState = 'START';
+    let clearedNotes = 0;
+    let combo = 0;
+    let maxCombo = 0;
+    let particles = [];
+    let currentSongTime = 0;
+    let timeline = [];
+    let totalBeats = 0;
+
+    let staffY = 320;
+    let staffSpacing = 16;
+    let playerX = 160;
+
+    // The animated quarter note character with stick limbs
+    const player = {
+      x: 160,
+      y: 0,
+      baseY: 0,
+      vy: 0,
+      gravity: 2400,
+      jumpVelocity: -750,
+      isGrounded: true,
+      runCycle: 0,
+      tapFootCycle: 0,
+      squash: 1,
+
+      reset(groundY) {
+        this.baseY = groundY;
+        this.y = groundY;
+        this.vy = 0;
+        this.isGrounded = true;
+        this.runCycle = 0;
+        this.tapFootCycle = 0;
+        this.squash = 1;
+      },
+
+      jump() {
+        if (this.isGrounded) {
+          this.vy = this.jumpVelocity;
+          this.isGrounded = false;
+          this.squash = 1.35;
+          sound.playJumpSfx();
+          spawnParticles(this.x, this.y, 6, '♪');
+          return true;
+        }
+        return false;
+      },
+
+      update(dt) {
+        if (!this.isGrounded) {
+          this.vy += this.gravity * dt;
+          this.y += this.vy * dt;
+
+          if (this.y >= this.baseY) {
+            this.y = this.baseY;
+            this.vy = 0;
+            this.isGrounded = true;
+            this.squash = 0.8;
+          }
+        } else {
+          if (gameState === 'PLAYING') {
+            this.runCycle += dt * 13;
+          } else if (gameState === 'COUNTDOWN') {
+            this.tapFootCycle += dt * 8;
+          }
+          this.squash += (1 - this.squash) * 0.22;
+        }
+      },
+
+      draw(c) {
+        c.save();
+        c.translate(this.x, this.y);
+        c.scale(1 / this.squash, this.squash);
+
+        c.fillStyle = '#000000';
+        c.strokeStyle = '#000000';
+        c.lineWidth = 3.2;
+        c.lineCap = 'round';
+        c.lineJoin = 'round';
+
+        // Note Head (Body)
+        c.save();
+        c.translate(0, -14);
+        c.rotate(-0.35);
+        c.beginPath();
+        c.ellipse(0, 0, 12, 8.5, 0, 0, Math.PI * 2);
+        c.fill();
+
+        // Expressive Cartoon Eyes
+        c.fillStyle = '#ffffff';
+        c.beginPath();
+        c.arc(2.5, -2, 3, 0, Math.PI * 2);
+        c.fill();
+        c.fillStyle = '#000000';
+        c.beginPath();
+        c.arc(3.5, -2, 1.4, 0, Math.PI * 2);
+        c.fill();
+        c.restore();
+
+        // Note Stem (Upward rod)
+        c.beginPath();
+        c.moveTo(8, -16);
+        c.lineTo(8, -48);
+        c.stroke();
+
+        // Note Flag (Whimsical fluttering flag)
+        c.beginPath();
+        c.moveTo(8, -48);
+        c.bezierCurveTo(22, -40, 20, -28, 8, -26);
+        c.fillStyle = '#000000';
+        c.fill();
+        c.stroke();
+
+        // Limbs based on state
+        if (!this.isGrounded) {
+          // Mid-air leaping pose
+          c.beginPath();
+          c.moveTo(2, -22);
+          c.lineTo(-10, -32);
+          c.moveTo(8, -22);
+          c.lineTo(20, -32);
+          c.stroke();
+
+          c.beginPath();
+          c.moveTo(-3, -5);
+          c.lineTo(-9, 4);
+          c.moveTo(5, -5);
+          c.lineTo(9, 4);
+          c.stroke();
+        } else if (gameState === 'COUNTDOWN') {
+          // Foot-tapping waiting for beat
+          const tap = Math.sin(this.tapFootCycle) > 0 ? -4 : 0;
+          c.beginPath();
+          c.moveTo(-2, -5);
+          c.lineTo(-2, 0);
+          c.lineTo(3, 0);
+          c.moveTo(5, -5);
+          c.lineTo(5, tap);
+          c.lineTo(11, tap);
+          c.stroke();
+
+          // Hand on hip waiting
+          c.beginPath();
+          c.moveTo(2, -20);
+          c.lineTo(-6, -15);
+          c.lineTo(-2, -10);
+          c.stroke();
+        } else {
+          // Energetic run cycle
+          const leg = Math.sin(this.runCycle) * 10;
+          c.beginPath();
+          c.moveTo(-2, -5);
+          c.lineTo(-2 + leg, 0);
+          c.lineTo(4 + leg, 0);
+          c.moveTo(5, -5);
+          c.lineTo(5 - leg, 0);
+          c.lineTo(11 - leg, 0);
+          c.stroke();
+
+          // Pumping arms
+          c.beginPath();
+          c.moveTo(1, -20);
+          c.lineTo(-8 - leg * 0.5, -13);
+          c.moveTo(7, -20);
+          c.lineTo(14 + leg * 0.5, -13);
+          c.stroke();
+        }
+
+        c.restore();
+      }
+    };
+
+    function buildTimeline() {
+      timeline = [];
+      let beatAcc = 1.0;
+
+      JINGLE_BELLS_MELODY.forEach((item, index) => {
+        timeline.push({
+          id: index,
+          beat: beatAcc,
+          time: beatAcc * SECONDS_PER_BEAT,
+          durationBeats: item.beats,
+          note: item.note,
+          text: item.text,
+          playedSound: false,
+          cleared: false,
+          failed: false
+        });
+        beatAcc += item.beats;
+      });
+
+      totalBeats = beatAcc + 2.5;
+    }
+
+    function spawnParticles(x, y, count = 8, char = '♪') {
+      const glyphs = [char, '♫', '★', '🔔', '•'];
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 40 + Math.random() * 140;
+        particles.push({
+          x: x,
+          y: y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 25,
+          char: glyphs[Math.floor(Math.random() * glyphs.length)],
+          life: 0.8,
+          scale: 12 + Math.random() * 8
+        });
+      }
+    }
+
+    function showJudgmentHUD(msg) {
+      judgmentText.textContent = msg;
+      judgmentBadge.style.opacity = '1';
+      judgmentBadge.style.transform = 'scale(1.08)';
+      setTimeout(() => {
+        judgmentBadge.style.opacity = '0';
+        judgmentBadge.style.transform = 'scale(0.85)';
+      }, 350);
+    }
+
+    function updateHUD() {
+      hudScore.textContent = `${clearedNotes} / ${timeline.length}`;
+      hudCombo.textContent = `x${combo}`;
+    }
+
+    function handleJumpInput() {
+      if (gameState === 'START' || gameState === 'GAMEOVER' || gameState === 'VICTORY') {
+        startCountdown();
+        return;
+      }
+      if (gameState !== 'PLAYING') return;
+
+      const currentBeat = currentSongTime / SECONDS_PER_BEAT;
+
+      // Find candidate notes around the hit target
+      let nearestNote = null;
+      let minDelta = 999;
+
+      for (let item of timeline) {
+        if (!item.cleared) {
+          const delta = Math.abs(currentBeat - item.beat);
+          if (delta < minDelta) {
+            minDelta = delta;
+            nearestNote = item;
+          }
+        }
+      }
+
+      // Strict Authentic Hit Tolerances
+      // Mario-style beat game: Jumping on rhythm clears the hurdle.
+      // Jumping completely empty off-beat or wildly early causes a stumble / penalty
+      const HIT_WINDOW = 0.38; // In beats (~180ms)
+
+      if (nearestNote && minDelta <= HIT_WINDOW) {
+        // Successful rhythmic leap!
+        player.jump();
+        nearestNote.cleared = true;
+        clearedNotes++;
+        combo++;
+        if (combo > maxCombo) maxCombo = combo;
+        updateHUD();
+
+        const isPerfect = minDelta <= 0.18;
+        showJudgmentHUD(isPerfect ? 'PERFECT! 🔔' : 'GOOD! ♫');
+        spawnParticles(player.x, player.y - 20, 12, '★');
+      } else {
+        // Jumped with no note nearby or completely off-beat: Instant death
+        triggerGameOver('กระโดดผิดจังหวะ! (OFF-BEAT)');
+      }
+    }
+
+    function triggerGameOver(reason) {
+      if (gameState !== 'PLAYING') return;
+      gameState = 'GAMEOVER';
+      sound.playFailSfx();
+      spawnParticles(player.x, player.y - 10, 20, '💥');
+
+      gameoverReason.textContent = reason;
+      gameoverScore.textContent = `${clearedNotes} / ${timeline.length}`;
+      gameoverCombo.textContent = maxCombo;
+      gameoverScreen.classList.remove('hidden');
+    }
+
+    function triggerVictory() {
+      gameState = 'VICTORY';
+      victoryScore.textContent = `${clearedNotes} / ${timeline.length}`;
+      victoryScreen.classList.remove('hidden');
+      spawnParticles(player.x, player.y - 20, 35, '🎉');
+    }
+
+    function resizeCanvas() {
+      const rect = gameWrapper.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.resetTransform();
+      ctx.scale(dpr, dpr);
+
+      playerX = rect.width * 0.25;
+      player.x = playerX;
+      staffY = rect.height * 0.62;
+      staffSpacing = Math.min(rect.height * 0.04, 18);
+      player.reset(staffY);
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    function drawStaff(rect) {
+      ctx.lineWidth = 1.6;
+      ctx.strokeStyle = '#000000';
+
+      // 5 musical stave lines
+      for (let i = 0; i < 5; i++) {
+        const y = staffY - (i * staffSpacing);
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(rect.width, y);
+        ctx.stroke();
+      }
+
+      // Treble Clef icon on the left
+      ctx.save();
+      ctx.fillStyle = '#000000';
+      ctx.font = `${staffSpacing * 4.6}px serif`;
+      ctx.fillText('𝄞', 14, staffY - staffSpacing * 0.4);
+      ctx.restore();
+
+      // Hit cadence marker line (Vertical dotted jump line)
+      ctx.save();
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+      ctx.lineWidth = 2.2;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(player.x, staffY - staffSpacing * 5.5);
+      ctx.lineTo(player.x, staffY + staffSpacing * 1.5);
+      ctx.stroke();
+      ctx.restore();
+
+      // Ground target spot
+      ctx.save();
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(player.x, staffY + 8, 22, 6, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawNotes(rect, currentBeat) {
+      const pitchMap = {
+        'C4': 0,
+        'D4': staffSpacing * 0.5,
+        'E4': staffSpacing * 1.0,
+        'F4': staffSpacing * 1.5,
+        'G4': staffSpacing * 2.0
+      };
+
+      for (let item of timeline) {
+        const beatDelta = item.beat - currentBeat;
+        const itemX = player.x + (beatDelta * PIXELS_PER_BEAT);
+
+        if (itemX < -80 || itemX > rect.width + 120) continue;
+
+        const pitchOffset = pitchMap[item.note] || (staffSpacing * 1.0);
+        const itemY = staffY - pitchOffset;
+
+        ctx.save();
+        ctx.translate(itemX, itemY);
+
+        if (item.cleared) {
+          // Passed obstacle: faint cleared stamp
+          ctx.globalAlpha = 0.25;
+          ctx.fillStyle = '#000000';
+          ctx.font = 'bold 16px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('✓', 0, 5);
+        } else {
+          // Obstacle note hurdle
+          ctx.fillStyle = '#000000';
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 11, 7.5, -0.3, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Stem
+          ctx.strokeStyle = '#000000';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.moveTo(7, -3);
+          ctx.lineTo(7, -26);
+          ctx.stroke();
+
+          // Obstacle Spikes / Hazard ring
+          ctx.beginPath();
+          ctx.arc(0, 0, 14, 0, Math.PI * 2);
+          ctx.strokeStyle = 'rgba(0,0,0,0.45)';
+          ctx.setLineDash([3, 3]);
+          ctx.stroke();
+
+          // Lyrics label below note
+          ctx.fillStyle = '#000000';
+          ctx.setLineDash([]);
+          ctx.font = 'bold 11px Kanit, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(item.text, 0, 26);
+        }
+
+        ctx.restore();
+      }
+    }
+
+    function drawParticles(dt) {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.life -= dt;
+
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+
+        ctx.save();
+        ctx.fillStyle = `rgba(0, 0, 0, ${p.life / 0.8})`;
+        ctx.font = `${p.scale}px 'Courier Prime', monospace`;
+        ctx.textAlign = 'center';
+        ctx.fillText(p.char, p.x, p.y);
+        ctx.restore();
+      }
+    }
+
+    let lastTime = 0;
+
+    function gameLoop(timestamp) {
+      if (!lastTime) lastTime = timestamp;
+      const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+      lastTime = timestamp;
+
+      const rect = gameWrapper.getBoundingClientRect();
+      ctx.clearRect(0, 0, rect.width, rect.height);
+
+      if (gameState === 'COUNTDOWN') {
+        player.update(dt);
+      } else if (gameState === 'PLAYING') {
+        currentSongTime += dt;
+        const currentBeat = currentSongTime / SECONDS_PER_BEAT;
+
+        // Metronome flash dot
+        const beatFrac = currentBeat % 1;
+        if (beatFrac < 0.22) {
+          metronomeDot.classList.add('bg-black');
+          metronomeDot.classList.remove('bg-neutral-200');
+        } else {
+          metronomeDot.classList.remove('bg-black');
+          metronomeDot.classList.add('bg-neutral-200');
+        }
+
+        // Progress bar
+        const pct = Math.min(100, (currentBeat / totalBeats) * 100);
+        progressBar.style.width = `${pct}%`;
+
+        // Dynamic Lyrics Guide
+        if (currentBeat < 4.5) {
+          lyricsGuide.textContent = '♪ Jingle Bells (E - E - E)';
+        } else if (currentBeat < 8.5) {
+          lyricsGuide.textContent = '♪ Jingle Bells (E - E - E)';
+        } else if (currentBeat < 13.5) {
+          lyricsGuide.textContent = '♪ Jingle all the way! (E G C D E)';
+        } else {
+          lyricsGuide.textContent = '♪ Oh what fun it is to ride in a one-horse open sleigh!';
+        }
+
+        // Play authentic synthesized chime when each note aligns with the player
+        for (let item of timeline) {
+          if (!item.playedSound && currentSongTime >= item.time - 0.02) {
+            item.playedSound = true;
+            sound.playBell(item.note, item.durationBeats * SECONDS_PER_BEAT);
+          }
+
+          // If character ran into a note on the ground without jumping -> Crash / Miss!
+          // Authentic Mario collision rule: if beat passed without jump, instant death
+          if (!item.cleared && (currentBeat - item.beat) > 0.4) {
+            triggerGameOver('วิ่งชนโน้ตดนตรี! ลืมกระโดดตามจังหวะ');
+            break;
+          }
+        }
+
+        if (currentBeat >= totalBeats && gameState === 'PLAYING') {
+          triggerVictory();
+        }
+
+        player.update(dt);
+      }
+
+      // Draw Staves & Obstacles
+      drawStaff(rect);
+      const activeBeat = (gameState === 'COUNTDOWN') ? 0 : currentSongTime / SECONDS_PER_BEAT;
+      drawNotes(rect, activeBeat);
+
+      // Draw Quarter Note Character
+      player.draw(ctx);
+
+      // Confetti & Jump Particles
+      drawParticles(dt);
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    function triggerCountdownBeat(num) {
+      countdownNumber.classList.remove('pop-in');
+      countdownRing.classList.remove('pulse-ring');
+      void countdownNumber.offsetWidth;
+      void countdownRing.offsetWidth;
+
+      countdownNumber.classList.add('pop-in');
+      countdownRing.classList.add('pulse-ring');
+
+      if (num > 0) {
+        countdownNumber.textContent = num;
+        sound.playWoodblock(num === 1);
+      } else {
+        countdownNumber.textContent = 'GO!';
+        sound.playWoodblock(true);
+        sound.playBell('C5', 0.25);
+      }
+    }
+
+    function startCountdown() {
+      sound.init();
+      buildTimeline();
+
+      clearedNotes = 0;
+      combo = 0;
+      maxCombo = 0;
+      updateHUD();
+
+      gameState = 'COUNTDOWN';
+      let beatCounter = 4;
+
+      startScreen.classList.add('hidden');
+      gameoverScreen.classList.add('hidden');
+      victoryScreen.classList.add('hidden');
+      countdownOverlay.classList.remove('hidden');
+
+      player.reset(staffY);
+      particles = [];
+
+      const beatMs = SECONDS_PER_BEAT * 1000;
+      triggerCountdownBeat(4);
+
+      const countInterval = setInterval(() => {
+        beatCounter--;
+        if (beatCounter >= 1) {
+          triggerCountdownBeat(beatCounter);
+        } else if (beatCounter === 0) {
+          triggerCountdownBeat(0); // "GO!"
+        } else {
+          clearInterval(countInterval);
+          countdownOverlay.classList.add('hidden');
+          gameState = 'PLAYING';
+          currentSongTime = 0;
+        }
+      }, beatMs);
+    }
+
+    // Event Listeners (Keyboard & Touch)
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' || e.code === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+        e.preventDefault();
+        handleJumpInput();
+      }
+    });
+
+    gameWrapper.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('#btn-audio-toggle')) return;
+      e.preventDefault();
+      handleJumpInput();
+    });
+
+    btnStart.addEventListener('click', (e) => {
+      e.stopPropagation();
+      startCountdown();
+    });
+
+    btnRestart.addEventListener('click', (e) => {
+      e.stopPropagation();
+      startCountdown();
+    });
+
+    btnVictoryRestart.addEventListener('click', (e) => {
+      e.stopPropagation();
+      startCountdown();
+    });
+
+    btnAudioToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sound.init();
+      sound.isMuted = !sound.isMuted;
+      btnAudioToggle.textContent = sound.isMuted ? '🔇' : '🔊';
+    });
+
+    window.addEventListener('load', () => {
+      resizeCanvas(); 
+      requestAnimationFrame(gameLoop);
+    });
+  </script>
+</body>
+</html>

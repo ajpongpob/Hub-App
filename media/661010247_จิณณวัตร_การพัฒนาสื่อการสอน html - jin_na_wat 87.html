@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saxophone Bb Pentatonic - 8-Bit Game</title>
+    <!-- โหลดฟอนต์ Pixel 8-Bit จาก Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background-color: #0f0d1b;
+            color: #ffffff;
+            font-family: 'Press Start 2P', monospace, cursive;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* กรอบตู้เกม Pixel Frame */
+        .game-card {
+            background-color: #1e1b36;
+            border: 6px solid #f7a81d;
+            box-shadow: 0 0 0 6px #000, 8px 8px 0px 6px #000;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 520px;
+            padding: 25px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #f7a81d;
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px #000;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            background: #000;
+            padding: 12px;
+            border: 4px solid #fff;
+            font-size: 10px;
+        }
+
+        .hearts { color: #ff4757; }
+        .score { color: #2ed573; }
+        .progress { color: #ffa502; }
+
+        /* ปุ่มเล่นเสียง Saxophone */
+        .sound-btn {
+            background-color: #ffda79;
+            color: #000;
+            border: 4px solid #000;
+            padding: 20px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 13px;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 25px;
+            box-shadow: 0 6px 0 #ccae37;
+            transition: transform 0.1s;
+        }
+
+        .sound-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #ccae37;
+        }
+
+        /* ปุ่มตัวเลือก 3 ข้อ */
+        .options-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .opt-btn {
+            background-color: #2ed573;
+            color: #000;
+            border: 4px solid #000;
+            padding: 16px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #20bf6b;
+        }
+
+        .opt-btn:hover {
+            background-color: #7bed9f;
+        }
+
+        .opt-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 #20bf6b;
+        }
+
+        /* กล่องแสดงสถานะผลลัพธ์ */
+        .message-box {
+            height: 30px;
+            font-size: 11px;
+            margin-top: 10px;
+        }
+
+        .correct { color: #2ed573; }
+        .wrong { color: #ff4757; }
+
+        .overlay {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .start-btn {
+            background-color: #ff4757;
+            color: #fff;
+            border: 4px solid #000;
+            padding: 15px 30px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 13px;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #b32d38;
+        }
+
+        .start-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #b32d38;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-card">
+        <!-- หน้าเริ่มเกม -->
+        <div id="start-screen" class="overlay">
+            <h1>SAXOPHONE<br>EAR TRAINING</h1>
+            <p style="font-size: 10px; line-height: 1.8; color: #aaa;">
+                Bb Major Pentatonic<br>
+                Range: Bb2 - Bb4<br>
+                (Speed: 60 BPM / 2 Beats)
+            </p>
+            <button class="start-btn" onclick="startGame()">START GAME</button>
+        </div>
+
+        <!-- หน้าเล่นเกม -->
+        <div id="game-screen" class="hidden">
+            <div class="stats-bar">
+                <div class="progress" id="question-display">1/10</div>
+                <div class="hearts" id="lives-display">❤️❤️❤️</div>
+                <div class="score" id="score-display">SCORE: 0</div>
+            </div>
+
+            <button class="sound-btn" id="play-sound-btn" onclick="playCurrentNote()">🎷 PLAY SAX SOUND</button>
+
+            <div class="options-grid" id="options-container">
+                <!-- ตัวเลือก 3 ข้อจะสร้างผ่าน JS -->
+            </div>
+
+            <div class="message-box" id="message"></div>
+        </div>
+
+        <!-- หน้าสรุปผลคะแนน -->
+        <div id="game-over-screen" class="overlay hidden">
+            <h1 id="game-result-title" style="color: #f7a81d;">STAGE CLEAR!</h1>
+            <p id="final-score" style="font-size: 11px; line-height: 1.8;"></p>
+            <button class="start-btn" onclick="startGame()">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <script>
+        // โน้ตในสเกล Bb Major Pentatonic ช่วง Bb2 - Bb4
+        const notesData = [
+            { name: "Bb2", freq: 116.54 },
+            { name: "C3",  freq: 130.81 },
+            { name: "D3",  freq: 146.83 },
+            { name: "F3",  freq: 174.61 },
+            { name: "G3",  freq: 196.00 },
+            { name: "Bb3", freq: 233.08 },
+            { name: "C4",  freq: 261.63 },
+            { name: "D4",  freq: 293.66 },
+            { name: "F4",  freq: 349.23 },
+            { name: "G4",  freq: 392.00 },
+            { name: "Bb4", freq: 466.16 }
+        ];
+
+        const TOTAL_QUESTIONS = 10;
+        let currentQuestionNumber = 0;
+        let audioCtx = null;
+        let score = 0;
+        let lives = 3;
+        let currentNote = null;
+        let isAnsweringBlocked = false;
+
+        function startGame() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            score = 0;
+            lives = 3;
+            currentQuestionNumber = 0;
+            isAnsweringBlocked = false;
+
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-over-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+
+            nextQuestion();
+        }
+
+        // สังเคราะห์เสียงให้มีเนื้อเสียงคล้าย Saxophone (Woodwind Synthesis)
+        function playSaxSound(freq) {
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+            const duration = 2.0; // 2 Beats ที่ BPM = 60 (1 beat = 1 วินาที -> 2 beats = 2 วินาที)
+
+            // 1. Oscillator หลัก (Sawtooth wave สำหรับความกังวานของแตร)
+            const osc1 = audioCtx.createOscillator();
+            osc1.type = 'sawtooth';
+            osc1.frequency.setValueAtTime(freq, now);
+
+            // 2. Oscillator เสริม (Square wave ช่วยเพิ่มบอดี้เสียง)
+            const osc2 = audioCtx.createOscillator();
+            osc2.type = 'square';
+            osc2.frequency.setValueAtTime(freq, now);
+
+            // 3. Vibrato (LFO ให้เสียงสั่นพริ้วแบบเครื่องลม)
+            const lfo = audioCtx.createOscillator();
+            const lfoGain = audioCtx.createGain();
+            lfo.frequency.value = 5.0; // ความเร็วสั่น 5Hz
+            lfoGain.gain.value = freq * 0.012; // ความลึก vibrato
+            lfo.connect(osc1.frequency);
+            lfo.connect(osc2.frequency);
+
+            // 4. Acoustic Filter (Lowpass filter ช่วยซับเสียงแหลมให้ได้โทน Sax)
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            // ปรับจุดตัดความถี่ตามระดับเสียงโน้ต
+            filter.frequency.setValueAtTime(freq * 3.5, now);
+
+            // Envelope คอนโทรลเสียงลม (Gain Envelope)
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.setValueAtTime(0, now);
+            // Attack (จังหวะลมเริ่มเป่า)
+            gainNode.gain.linearRampToValueAtTime(0.35, now + 0.12);
+            // Sustain (คงระดับเสียงไว้ตลอด 2 Beats)
+            gainNode.gain.setValueAtTime(0.35, now + duration - 0.2);
+            // Release (ผ่อนลมปลายโน้ต)
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+            // เชื่อมต่อสัญญาณ Audio
+            osc1.connect(filter);
+            osc2.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            // เริ่มเล่นเสียง
+            lfo.start(now);
+            osc1.start(now);
+            osc2.start(now);
+
+            // หยุดเล่นเมื่อครบ 2 จังหวะ (2 วินาที)
+            lfo.stop(now + duration);
+            osc1.stop(now + duration);
+            osc2.stop(now + duration);
+        }
+
+        function playCurrentNote() {
+            if (currentNote) {
+                playSaxSound(currentNote.freq);
+            }
+        }
+
+        function nextQuestion() {
+            if (currentQuestionNumber >= TOTAL_QUESTIONS) {
+                endGame(true);
+                return;
+            }
+
+            currentQuestionNumber++;
+            updateStats();
+
+            document.getElementById('message').innerText = "";
+            document.getElementById('message').className = "message-box";
+            isAnsweringBlocked = false;
+
+            // สุ่มโน้ตเป้าหมาย
+            const randomIndex = Math.floor(Math.random() * notesData.length);
+            currentNote = notesData[randomIndex];
+
+            // เล่นเสียงอัตโนมัติเมื่อเริ่มข้อใหม่
+            setTimeout(() => {
+                playCurrentNote();
+            }, 300);
+
+            // สุ่มตัวเลือก 3 ข้อ
+            generateOptions(currentNote);
+        }
+
+        function generateOptions(correct) {
+            const container = document.getElementById('options-container');
+            container.innerHTML = "";
+
+            let choices = [correct];
+            let otherNotes = notesData.filter(n => n.name !== correct.name);
+
+            // สุ่มตัวเลือกหลอกอีก 2 ตัว (รวมเป็น 3 ตัวเลือก)
+            while (choices.length < 3) {
+                let randIndex = Math.floor(Math.random() * otherNotes.length);
+                choices.push(otherNotes[randIndex]);
+                otherNotes.splice(randIndex, 1);
+            }
+
+            // สลับลำดับปุ่มช้อยส์
+            choices.sort(() => Math.random() - 0.5);
+
+            choices.forEach(note => {
+                const btn = document.createElement('button');
+                btn.className = 'opt-btn';
+                btn.innerText = note.name;
+                btn.onclick = () => checkAnswer(note.name);
+                container.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selectedName) {
+            if (isAnsweringBlocked) return;
+            isAnsweringBlocked = true;
+
+            const msgElement = document.getElementById('message');
+
+            if (selectedName === currentNote.name) {
+                score += 10;
+                msgElement.innerText = "CORRECT! +10";
+                msgElement.className = "message-box correct";
+                playSfx(true);
+                updateStats();
+                setTimeout(nextQuestion, 1200);
+            } else {
+                lives -= 1;
+                msgElement.innerText = `WRONG! IT WAS ${currentNote.name}`;
+                msgElement.className = "message-box wrong";
+                playSfx(false);
+                updateStats();
+
+                if (lives <= 0) {
+                    setTimeout(() => endGame(false), 1500);
+                } else {
+                    setTimeout(nextQuestion, 1500);
+                }
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('score-display').innerText = `SCORE: ${score}`;
+            document.getElementById('lives-display').innerText = "❤️".repeat(lives);
+            document.getElementById('question-display').innerText = `${currentQuestionNumber}/${TOTAL_QUESTIONS}`;
+        }
+
+        // เอฟเฟกต์ 8-bit เมื่อตอบถูก/ผิด
+        function playSfx(isCorrect) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (isCorrect) {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.2);
+            } else {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(160, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(110, audioCtx.currentTime + 0.12);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.25);
+            }
+        }
+
+        function endGame(isWin) {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('game-over-screen').classList.remove('hidden');
+
+            const title = document.getElementById('game-result-title');
+            const scoreText = document.getElementById('final-score');
+
+            if (isWin) {
+                title.innerText = "STAGE CLEAR!";
+                title.style.color = "#2ed573";
+                scoreText.innerHTML = `GREAT JOB!<br>FINAL SCORE: ${score} / 100`;
+            } else {
+                title.innerText = "GAME OVER";
+                title.style.color = "#ff4757";
+                scoreText.innerHTML = `OUT OF LIVES!<br>FINAL SCORE: ${score} / 100`;
+            }
+        }
+    </script>
+</body>
+</html>

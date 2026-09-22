@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Perfect Pitch Trainer</title>
+<style>
+  *{box-sizing:border-box}
+  :root{
+    --bg:#f6f8fc;
+    --card:#ffffff;
+    --text:#273248;
+    --muted:#7b8497;
+    --primary:#6575e8;
+    --primary-dark:#5362cf;
+    --border:#e9ecf3;
+    --success:#38b77a;
+    --danger:#e96b7c;
+  }
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+  }
+  .wrap{
+    width:min(920px,100%);
+    margin:auto;
+    padding:34px 18px 48px;
+  }
+  header{
+    text-align:center;
+    margin-bottom:22px;
+  }
+  h1{
+    margin:0;
+    font-size:clamp(28px,5vw,42px);
+    font-weight:800;
+    letter-spacing:-1px;
+  }
+  .sub{
+    margin:8px 0 0;
+    color:var(--muted);
+    font-size:15px;
+  }
+  .score{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:14px;
+    width:max-content;
+    margin:18px auto 0;
+    padding:9px 18px;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:999px;
+    color:var(--muted);
+    font-size:14px;
+    font-weight:700;
+    box-shadow:0 5px 18px rgba(38,50,72,.05);
+  }
+  .score-num{
+    color:var(--text);
+    font-size:20px;
+  }
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:22px;
+    padding:28px;
+    margin-bottom:18px;
+    box-shadow:0 8px 28px rgba(38,50,72,.055);
+  }
+  .play{
+    display:block;
+    margin:0 auto 22px;
+    border:0;
+    border-radius:13px;
+    padding:13px 27px;
+    font-size:16px;
+    font-weight:750;
+    cursor:pointer;
+    color:#fff;
+    background:var(--primary);
+    box-shadow:0 3px 0 var(--primary-dark);
+    transition:transform .12s,background .15s;
+  }
+  .play:hover:not(:disabled){background:#7180ed}
+  .play:active:not(:disabled){
+    transform:translateY(2px);
+    box-shadow:0 1px 0 var(--primary-dark);
+  }
+  .play.playing{
+    background:#e87388;
+    box-shadow:0 3px 0 #c9576c;
+  }
+  .play:disabled{
+    cursor:default;
+    opacity:.9;
+  }
+  .question{
+    text-align:center;
+    font-size:16px;
+    font-weight:750;
+    margin-bottom:14px;
+  }
+  .answers{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
+  }
+  .answer{
+    border:1px solid var(--border);
+    background:#fbfcfe;
+    color:var(--text);
+    border-radius:13px;
+    padding:14px 8px;
+    font-size:16px;
+    font-weight:750;
+    cursor:pointer;
+    transition:all .14s;
+  }
+  .answer:hover:not(:disabled){
+    border-color:#cbd2f5;
+    background:#f6f7ff;
+    transform:translateY(-1px);
+  }
+  .answer:disabled{cursor:default}
+  .answer.correct{
+    background:#e9f8f0;
+    border-color:#8ed5ae;
+    color:#23784e;
+  }
+  .answer.wrong{
+    background:#fff0f2;
+    border-color:#efadb8;
+    color:#a94355;
+  }
+  .feedback{
+    text-align:center;
+    min-height:24px;
+    margin-top:15px;
+    color:var(--muted);
+    font-size:14px;
+    font-weight:700;
+  }
+  .reset{
+    display:none;
+    margin:16px auto 0;
+    border:0;
+    border-radius:13px;
+    padding:12px 24px;
+    background:#55b987;
+    color:#fff;
+    font-size:15px;
+    font-weight:750;
+    cursor:pointer;
+    box-shadow:0 3px 0 #3c956c;
+  }
+  .reset.show{display:block}
+  .piano-title{
+    margin-bottom:18px;
+  }
+  .piano-wrap{
+    overflow:hidden;
+    padding:0;
+  }
+  .piano{
+    position:relative;
+    height:190px;
+    width:100%;
+    max-width:900px;
+    margin:auto;
+    display:flex;
+    padding:0 0 10px;
+    user-select:none;
+  }
+  .white{
+    position:relative;
+    height:180px;
+    flex:1 1 0;
+    background:linear-gradient(90deg,#fff,#fafafa);
+    border:1px solid #cfd3dc;
+    border-radius:0 0 6px 6px;
+    box-shadow:0 4px 7px rgba(0,0,0,.08);
+    z-index:1;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    padding-bottom:9px;
+    font-size:10px;
+    color:#8a91a0;
+    cursor:default;
+  }
+  .black{
+    position:absolute;
+    top:0;
+    height:112px;
+    z-index:3;
+    background:linear-gradient(90deg,#1e2430,#424a59 48%,#171c25);
+    border:1px solid #171c25;
+    border-radius:0 0 5px 5px;
+    box-shadow:0 5px 7px rgba(0,0,0,.25);
+    cursor:default;
+  }
+  .legend{
+    text-align:center;
+    color:#9aa1af;
+    font-size:12px;
+    margin-top:7px;
+  }
+  @media(max-width:600px){
+    .wrap{padding:26px 12px 36px}
+    .card{padding:20px 14px;border-radius:18px}
+    .answers{grid-template-columns:repeat(2,1fr)}
+    .piano{height:150px}
+    .white{height:142px;font-size:9px;padding-bottom:7px}
+    .black{height:88px}
+    .score{font-size:13px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🎹 Perfect Pitch</h1>
+    <p class="sub">ฝึกฟังโน้ตให้แม่นยำขึ้น</p>
+    <div class="score"><span>ข้อ <span class="score-num" id="questionNum">1</span> / 10</span><span>•</span><span>คะแนน <span class="score-num" id="score">0</span> / 10</span></div>
+  </header>
+
+  <section class="card">
+    <button class="play" id="playBtn">▶ เล่นโน้ต</button>
+    <div class="question">โน้ตที่ได้ยินคืออะไร?</div>
+    <div class="answers" id="answers"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="reset" id="resetBtn">↻ เริ่มใหม่</button>
+  </section>
+
+  <section class="card">
+    <div class="question piano-title">เปียโน C4 – C5</div>
+    <div class="piano-wrap"><div class="piano" id="piano"></div></div>
+    <div class="legend">แสดงช่วงโน้ต C4 – C5</div>
+  </section>
+</div>
+
+<script>
+const noteNames = ["C","C♯","D","D♯","E","F","F♯","G","G♯","A","A♯","B"];
+const midiNames = n => noteNames[n%12] + (Math.floor(n/12)-1);
+const startMidi=60, endMidi=72; // C4–C5
+let target=null, score=0, questionCount=0, locked=false, audioCtx=null;
+
+function getCtx(){
+  if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==="suspended") audioCtx.resume();
+  return audioCtx;
+}
+function freq(midi){ return 440*Math.pow(2,(midi-69)/12); }
+
+function playTone(midi, duration=.95){
+  const ctx=getCtx(), now=ctx.currentTime;
+  const osc=ctx.createOscillator(), gain=ctx.createGain();
+  osc.type="triangle"; osc.frequency.value=freq(midi);
+  gain.gain.setValueAtTime(0.0001,now);
+  gain.gain.exponentialRampToValueAtTime(0.28,now+0.015);
+  gain.gain.exponentialRampToValueAtTime(0.0001,now+duration);
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.start(now); osc.stop(now+duration+.03);
+}
+
+function newQuestion(){
+  locked=false;
+  document.getElementById("feedback").textContent="";
+  target=startMidi+Math.floor(Math.random()*(endMidi-startMidi+1));
+  let choices=[target];
+  while(choices.length<4){
+    let n=startMidi+Math.floor(Math.random()*(endMidi-startMidi+1));
+    if(!choices.includes(n)) choices.push(n);
+  }
+  choices.sort(()=>Math.random()-.5);
+
+  document.getElementById("questionNum").textContent=Math.min(questionCount+1,10);
+
+  const box=document.getElementById("answers");
+  box.innerHTML="";
+  choices.forEach(n=>{
+    const b=document.createElement("button");
+    b.className="answer";
+    b.textContent=midiNames(n);
+    b.onclick=()=>answer(n,b);
+    box.appendChild(b);
+  });
+}
+
+function answer(n,btn){
+  if(locked || questionCount>=10) return;
+  locked=true;
+
+  const buttons=[...document.querySelectorAll(".answer")];
+  buttons.forEach(b=>b.disabled=true);
+
+  if(n===target){
+    score++;
+    btn.classList.add("correct");
+    document.getElementById("feedback").textContent="✨ ถูกต้อง!";
+  }else{
+    btn.classList.add("wrong");
+    const correctBtn=buttons.find(b=>b.textContent===midiNames(target));
+    if(correctBtn) correctBtn.classList.add("correct");
+    document.getElementById("feedback").textContent="ยังไม่ถูก — โน้ตคือ "+midiNames(target);
+  }
+
+  // Every answered question advances the round, whether correct or wrong.
+  questionCount++;
+  document.getElementById("score").textContent=score;
+  document.getElementById("questionNum").textContent=questionCount;
+
+  if(questionCount>=10){
+    document.getElementById("playBtn").disabled=true;
+    document.getElementById("playBtn").textContent="🏆 จบเกม!";
+    document.getElementById("resetBtn").classList.add("show");
+    document.getElementById("feedback").textContent =
+      `จบเกม! คุณได้ ${score} / 10 คะแนน 🎉`;
+  }else{
+    setTimeout(newQuestion,850);
+  }
+}
+
+document.getElementById("playBtn").onclick=()=>{
+  if(target===null) newQuestion();
+  const btn=document.getElementById("playBtn");
+  playTone(target); btn.classList.add("playing"); btn.textContent="♪ กำลังเล่น...";
+  setTimeout(()=>{btn.classList.remove("playing");btn.textContent="▶ เล่นโน้ต"},900);
+};
+
+document.getElementById("resetBtn").onclick=()=>{
+  score=0; questionCount=0; document.getElementById("score").textContent=0; document.getElementById("questionNum").textContent=1;
+  document.getElementById("playBtn").disabled=false;
+  document.getElementById("playBtn").textContent="▶ เล่นโน้ต";
+  document.getElementById("resetBtn").classList.remove("show");
+  newQuestion();
+};
+
+// Build a visual-only full C4–C5 keyboard with white + black keys.
+const piano=document.getElementById("piano");
+const whiteMidi=[];
+for(let m=startMidi;m<=endMidi;m++){
+  if(!noteNames[m%12].includes("♯")) whiteMidi.push(m);
+}
+
+whiteMidi.forEach(m=>{
+  const key=document.createElement("div");
+  key.className="white";
+  key.dataset.midi=m;
+  key.textContent=midiNames(m);
+  piano.appendChild(key);
+});
+
+const blackMidi=[];
+for(let m=startMidi;m<endMidi;m++){
+  if(noteNames[m%12].includes("♯")) blackMidi.push(m);
+}
+
+function positionBlackKeys(){
+  const whiteCount=whiteMidi.length;
+  const whiteWidth=100/whiteCount;
+
+  blackMidi.forEach(m=>{
+    const idx=whiteMidi.indexOf(m-1);
+    if(idx<0) return;
+
+    const b=document.createElement("div");
+    b.className="black";
+    b.dataset.midi=m;
+    b.style.left=((idx+1)*whiteWidth - whiteWidth*0.31)+"%";
+    b.style.width=(whiteWidth*0.62)+"%";
+    b.setAttribute("aria-hidden","true");
+    piano.appendChild(b);
+  });
+}
+positionBlackKeys();
+
+newQuestion();
+</script>
+</body>
+</html>

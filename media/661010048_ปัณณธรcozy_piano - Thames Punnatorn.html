@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🎹 Cozy Piano Playground</title>
+<style>
+  :root{
+    --bg:#fff9fc; --card:#ffffff; --ink:#493f50; --muted:#8c8193;
+    --pink:#f7b8d2; --pink2:#ffe1ed; --blue:#bfe4f5; --purple:#d9c9f7;
+    --yellow:#ffe7a8; --shadow:0 14px 40px rgba(93,70,105,.12);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; min-height:100vh; font-family:ui-rounded,"SF Pro Rounded","Segoe UI",sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 10% 10%,#ffe9f2 0 9%,transparent 23%),
+      radial-gradient(circle at 90% 20%,#e8f7ff 0 8%,transparent 24%),
+      radial-gradient(circle at 50% 100%,#f0e9ff 0 10%,transparent 28%),var(--bg);
+  }
+  .app{width:min(1120px,94vw);margin:0 auto;padding:28px 0 42px}
+  header{text-align:center;margin-bottom:20px}
+  .badge{display:inline-block;padding:7px 12px;border-radius:999px;background:#fff;box-shadow:0 6px 20px rgba(80,50,90,.07);font-size:13px;color:var(--muted)}
+  h1{font-size:clamp(28px,5vw,46px);margin:12px 0 5px;letter-spacing:-1.5px}
+  .subtitle{margin:0;color:var(--muted);font-size:14px}
+  .now{
+    min-height:72px;margin:20px auto 16px;width:min(540px,100%);
+    border-radius:24px;background:rgba(255,255,255,.86);box-shadow:var(--shadow);
+    display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;padding:14px 18px;
+  }
+  .now .label{font-size:12px;color:var(--muted)}
+  .note-name{font-size:30px;font-weight:800;min-width:90px}
+  .card{background:rgba(255,255,255,.82);border:1px solid rgba(255,255,255,.9);border-radius:28px;box-shadow:var(--shadow);padding:18px}
+  .piano-card{overflow:hidden}
+  .toolbar{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+  .section-title{font-weight:800;font-size:17px}
+  .hint{font-size:12px;color:var(--muted)}
+  .keyboard-wrap{overflow-x:auto;overscroll-behavior-x:contain;padding:4px 2px 12px;touch-action:pan-x}
+  .keyboard{
+    position:relative;display:flex;height:250px;min-width:700px;
+    margin:auto;width:100%;
+  }
+  .key{
+    position:relative;user-select:none;-webkit-user-select:none;touch-action:none;
+    cursor:pointer;transition:background .12s,box-shadow .12s,transform .08s;
+  }
+  .white{
+    flex:1;background:linear-gradient(180deg,#fff,#f9f6fa);
+    border:1px solid #ded7e2;border-radius:0 0 13px 13px;
+    box-shadow:inset 0 -8px 12px rgba(100,80,110,.05),0 3px 4px rgba(80,60,90,.08);
+    z-index:1;display:flex;align-items:flex-end;justify-content:center;padding-bottom:13px;
+    min-width:52px;
+  }
+  .white:first-child{border-radius:12px 0 13px 13px}.white:last-child{border-radius:0 12px 13px 13px}
+  .black{
+    position:absolute;top:0;width:8%;max-width:48px;height:154px;z-index:3;
+    background:linear-gradient(180deg,#5c5263,#312b38);border:1px solid #28232d;border-radius:0 0 9px 9px;
+    box-shadow:0 8px 10px rgba(40,30,50,.25);display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;color:#fff;
+  }
+  .key-label{font-size:11px;color:#918796;pointer-events:none}
+  .black .key-label{font-size:10px;color:#e8e0eb}
+  .pressed.white{background:linear-gradient(180deg,#ffe8f2,#f6bfd7);transform:translateY(3px);box-shadow:0 0 22px rgba(247,184,210,.9),inset 0 -8px 12px rgba(190,100,145,.14)}
+  .pressed.black{background:linear-gradient(180deg,#9d80b9,#654c79);transform:translateY(3px);box-shadow:0 0 22px rgba(178,142,218,.95)}
+  .hint-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .pill{padding:7px 10px;border-radius:999px;background:#f8f2fa;color:#776b7e;font-size:11px}
+  .chords{margin-top:18px}
+  .chord-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:13px}
+  button{
+    font:inherit;border:0;cursor:pointer;color:var(--ink);font-weight:750;
+    border-radius:17px;padding:12px 8px;background:#fff;box-shadow:0 7px 18px rgba(80,60,90,.09);
+    transition:transform .12s,box-shadow .12s,background .12s;
+  }
+  button:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(80,60,90,.13)}
+  button:active{transform:translateY(1px)}
+  .chord-btn small{display:block;font-weight:500;color:var(--muted);font-size:10px;margin-top:3px}
+  .chord-btn.active{background:var(--pink2);box-shadow:0 0 24px rgba(247,184,210,.75)}
+  .stop{background:#f0e9ff}
+  .tips{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+  .tip{padding:15px 16px;border-radius:21px;background:rgba(255,255,255,.65);color:#766b7b;font-size:12px;line-height:1.6}
+  .tip b{color:var(--ink)}
+  footer{text-align:center;color:#aaa0ae;font-size:11px;margin-top:20px}
+  @media(max-width:720px){
+    .app{width:96vw;padding-top:18px}.card{border-radius:22px;padding:13px}
+    .keyboard{height:215px;min-width:650px}.black{height:132px}
+    .chord-grid{grid-template-columns:repeat(3,1fr)}
+    .tips{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="badge">✨ Minimal • Cute • Playful</span>
+    <h1>🎹 Cozy Piano</h1>
+    <p class="subtitle">แตะคีย์ เล่นคอร์ด และสนุกกับเสียงดนตรีได้ทันที 🎵</p>
+  </header>
+
+  <div class="now" aria-live="polite">
+    <span class="label">กำลังเล่น</span>
+    <span class="note-name" id="nowName">—</span>
+    <span id="nowEmoji">✨</span>
+  </div>
+
+  <section class="card piano-card">
+    <div class="toolbar">
+      <div>
+        <div class="section-title">🎼 Piano Keys</div>
+        <div class="hint">คลิก/แตะคีย์ หรือใช้คีย์บอร์ดคอมพิวเตอร์</div>
+      </div>
+      <button class="stop" id="stopBtn">⏹ Stop</button>
+    </div>
+
+    <div class="keyboard-wrap">
+      <div class="keyboard" id="keyboard" aria-label="Virtual piano"></div>
+    </div>
+    <div class="hint-row">
+      <span class="pill">Computer: A W S E D F T G Y H U J K</span>
+      <span class="pill">ลากซ้าย–ขวาบนมือถือเพื่อดูคีย์ทั้งหมด</span>
+    </div>
+  </section>
+
+  <section class="card chords">
+    <div class="section-title">🎵 Chord Playground</div>
+    <div class="hint">เลือกคอร์ดเพื่อเล่นโน้ตพร้อมกันและดูคีย์เรืองแสง</div>
+    <div class="chord-grid" id="chords"></div>
+  </section>
+
+  <div class="tips">
+    <div class="tip">💡 <b>Tip:</b> เสียงถูกสร้างด้วย Web Audio API ทั้งหมด ไม่ต้องโหลดไฟล์เสียงภายนอก</div>
+    <div class="tip">🌷 <b>ลองเล่น:</b> กดคอร์ดแล้วกดโน้ตเดี่ยวต่อได้เลย เสียงจะค่อย ๆ หายอย่างนุ่มนวล</div>
+  </div>
+  <footer>Made for cozy practice • Web Audio API • Single HTML file</footer>
+</div>
+
+<script>
+/* =========================
+   Cozy Piano — Single-file JS
+   ========================= */
+
+// โน้ตที่แสดงบนเปียโน: C4 ถึง C5 (รวมคีย์ดำ)
+const noteData = [
+  {n:'C4', midi:60, type:'white', key:'a'},
+  {n:'C#4',midi:61,type:'black', key:'w', after:'C4'},
+  {n:'D4', midi:62, type:'white', key:'s'},
+  {n:'D#4',midi:63,type:'black', key:'e', after:'D4'},
+  {n:'E4', midi:64, type:'white', key:'d'},
+  {n:'F4', midi:65, type:'white', key:'f'},
+  {n:'F#4',midi:66,type:'black', key:'t', after:'F4'},
+  {n:'G4', midi:67, type:'white', key:'g'},
+  {n:'G#4',midi:68,type:'black', key:'y', after:'G4'},
+  {n:'A4', midi:69, type:'white', key:'h'},
+  {n:'A#4',midi:70,type:'black', key:'u', after:'A4'},
+  {n:'B4', midi:71, type:'white', key:'j'},
+  {n:'C5', midi:72, type:'white', key:'k'}
+];
+
+const chordData = [
+  {name:'C', label:'C Major', notes:['C4','E4','G4']},
+  {name:'Dm',label:'D Minor', notes:['D4','F4','A4']},
+  {name:'Em',label:'E Minor', notes:['E4','G4','B4']},
+  {name:'F', label:'F Major', notes:['F4','A4','C5']},
+  {name:'G', label:'G Major', notes:['G4','B4','D4']},
+  {name:'Am',label:'A Minor', notes:['A4','C5','E4']}
+];
+
+const keyboard = document.getElementById('keyboard');
+const noteMap = new Map(noteData.map(x => [x.n, x]));
+const keyElements = new Map();
+const held = new Map(); // note -> Set of active source IDs
+
+let audioCtx = null;
+const voices = new Map(); // sourceId -> voice
+let chordTimer = null;
+
+function ensureAudio(){
+  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if(audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function freqFromMidi(midi){
+  return 440 * Math.pow(2, (midi - 69) / 12);
+}
+
+function makeVoice(note, sourceId){
+  ensureAudio();
+  const now = audioCtx.currentTime;
+  const freq = freqFromMidi(note.midi);
+
+  // สร้างเสียงแบบ piano-ish: fundamental + harmonics ผ่าน oscillator หลายตัว
+  const gain = audioCtx.createGain();
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = 3400;
+  filter.Q.value = 0.7;
+
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(0.28, now + 0.012);
+  gain.gain.exponentialRampToValueAtTime(0.14, now + 0.22);
+
+  filter.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  const oscs = [
+    [1, 'triangle', 1.00],
+    [2, 'sine', 0.18],
+    [3, 'sine', 0.08]
+  ].map(([mult,type,amp])=>{
+    const o = audioCtx.createOscillator();
+    o.type = type;
+    o.frequency.value = freq * mult;
+    const g = audioCtx.createGain();
+    g.gain.value = amp;
+    o.connect(g); g.connect(filter); o.start(now);
+    return {o,g};
+  });
+
+  voices.set(sourceId, {gain, filter, oscs});
+}
+
+function releaseVoice(sourceId){
+  const v = voices.get(sourceId);
+  if(!v || !audioCtx) return;
+  const now = audioCtx.currentTime;
+  v.gain.gain.cancelScheduledValues(now);
+  v.gain.gain.setValueAtTime(Math.max(v.gain.gain.value,0.0001), now);
+  v.gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+  v.oscs.forEach(({o})=>o.stop(now + 0.48));
+  voices.delete(sourceId);
+}
+
+function pressNote(noteName, sourceId='pointer'){
+  const note = noteMap.get(noteName);
+  if(!note) return;
+  ensureAudio();
+
+  if(!held.has(noteName)) held.set(noteName, new Set());
+  const set = held.get(noteName);
+  if(set.has(sourceId)) return;
+  set.add(sourceId);
+
+  const actualId = noteName + ':' + sourceId;
+  makeVoice(note, actualId);
+  keyElements.get(noteName)?.classList.add('pressed');
+  showNow(noteName);
+}
+
+function releaseNote(noteName, sourceId='pointer'){
+  const set = held.get(noteName);
+  if(!set) return;
+  set.delete(sourceId);
+  releaseVoice(noteName + ':' + sourceId);
+  if(set.size === 0){
+    held.delete(noteName);
+    keyElements.get(noteName)?.classList.remove('pressed');
+  }
+  if(held.size === 0) showNow('—');
+}
+
+function showNow(name){
+  document.getElementById('nowName').textContent = name;
+  document.getElementById('nowEmoji').textContent = name === '—' ? '✨' : '🎶';
+}
+
+// สร้าง white keys ก่อน
+noteData.filter(x=>x.type==='white').forEach(note=>{
+  const el=document.createElement('div');
+  el.className='key white';
+  el.dataset.note=note.n;
+  el.innerHTML=`<span class="key-label">${note.n}<br><b>${note.key.toUpperCase()}</b></span>`;
+  keyboard.appendChild(el);
+  keyElements.set(note.n,el);
+});
+
+// วาง black keys ตามตำแหน่งหลัง white key ที่กำหนด
+noteData.filter(x=>x.type==='black').forEach(note=>{
+  const el=document.createElement('div');
+  el.className='key black';
+  el.dataset.note=note.n;
+  el.innerHTML=`<span class="key-label">${note.n}<br><b>${note.key.toUpperCase()}</b></span>`;
+  keyboard.appendChild(el);
+  keyElements.set(note.n,el);
+
+  // คำนวณตำแหน่งจากลำดับ white key
+  const whiteIndex = noteData.filter(x=>x.type==='white').findIndex(x=>x.n===note.after);
+  el.style.left = `calc(${((whiteIndex + 1) / 8) * 100}% - 4%)`;
+});
+
+// Pointer events รองรับ mouse + touch
+document.querySelectorAll('.key').forEach(el=>{
+  const note=el.dataset.note;
+  el.addEventListener('pointerdown',e=>{
+    e.preventDefault();
+    el.setPointerCapture?.(e.pointerId);
+    pressNote(note,'pointer');
+  });
+  el.addEventListener('pointerup',e=>{
+    e.preventDefault(); releaseNote(note,'pointer');
+  });
+  el.addEventListener('pointercancel',()=>releaseNote(note,'pointer'));
+  el.addEventListener('pointerleave',e=>{
+    if(e.buttons) releaseNote(note,'pointer');
+  });
+});
+
+// Keyboard mapping
+const downKeys=new Set();
+const byComputerKey=new Map(noteData.map(x=>[x.key,x.n]));
+window.addEventListener('keydown',e=>{
+  if(e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
+  const key=e.key.toLowerCase();
+  const note=byComputerKey.get(key);
+  if(!note) return;
+  e.preventDefault();
+  if(downKeys.has(key)) return;
+  downKeys.add(key);
+  pressNote(note,'keyboard');
+});
+window.addEventListener('keyup',e=>{
+  const key=e.key.toLowerCase();
+  const note=byComputerKey.get(key);
+  if(!note) return;
+  downKeys.delete(key);
+  releaseNote(note,'keyboard');
+});
+window.addEventListener('blur',()=>{
+  downKeys.forEach(key=>{
+    const note=byComputerKey.get(key);
+    if(note) releaseNote(note,'keyboard');
+  });
+  downKeys.clear();
+});
+
+// Chords
+const chordBox=document.getElementById('chords');
+chordData.forEach(chord=>{
+  const btn=document.createElement('button');
+  btn.className='chord-btn';
+  btn.innerHTML=`${chord.name}<small>${chord.label}</small>`;
+  btn.addEventListener('click',()=>{
+    stopAll();
+    btn.classList.add('active');
+    chord.notes.forEach((n,i)=>pressNote(n,'chord'+i));
+    showNow(chord.label);
+    clearTimeout(chordTimer);
+    chordTimer=setTimeout(()=>{
+      chord.notes.forEach((n,i)=>releaseNote(n,'chord'+i));
+      btn.classList.remove('active');
+    },1500);
+  });
+  chordBox.appendChild(btn);
+});
+
+function stopAll(){
+  clearTimeout(chordTimer);
+  chordData.forEach((c,ci)=>c.notes.forEach((n,i)=>releaseNote(n,'chord'+i)));
+  noteData.forEach(n=>releaseNote(n,'pointer'));
+  noteData.forEach(n=>releaseNote(n,'keyboard'));
+  voices.forEach((_,id)=>releaseVoice(id));
+  keyElements.forEach(el=>el.classList.remove('pressed'));
+  document.querySelectorAll('.chord-btn').forEach(b=>b.classList.remove('active'));
+  held.clear();
+  showNow('—');
+}
+document.getElementById('stopBtn').addEventListener('click',stopAll);
+</script>
+</body>
+</html>

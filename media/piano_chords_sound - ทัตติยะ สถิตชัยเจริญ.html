@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>คู่มือการเล่นคอร์ดเปียโน: Triads & Tension Chords (Realistic Sound)</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-main: #0b0f19;
+            --bg-card: #151d30;
+            --bg-card-hover: #1e2942;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --primary: #38bdf8;
+            --primary-glow: rgba(56, 189, 248, 0.35);
+            --accent-triad: #ec4899;
+            --accent-tension: #f59e0b;
+            --border-color: #23304a;
+            --key-white: #ffffff;
+            --key-black: #1e293b;
+            --key-active: #38bdf8;
+            --key-active-root: #ec4899;
+            --key-active-tension: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Prompt', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Navbar */
+        nav {
+            position: sticky;
+            top: 0;
+            background: rgba(11, 15, 25, 0.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 100;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+        }
+
+        .logo {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        /* Hero */
+        .hero {
+            padding: 60px 0 35px;
+            text-align: center;
+            background: radial-gradient(circle at 50% 20%, rgba(56, 189, 248, 0.15) 0%, transparent 65%);
+        }
+
+        .hero h1 {
+            font-size: 2.6rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+
+        .hero h1 span {
+            background: linear-gradient(90deg, #38bdf8, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            max-width: 700px;
+            margin: 0 auto 25px;
+        }
+
+        .sound-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(56, 189, 248, 0.12);
+            color: var(--primary);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        /* Interactive Piano Section */
+        .interactive-section {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+        }
+
+        .interactive-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .interactive-header h2 {
+            font-size: 1.6rem;
+            color: var(--text-main);
+            margin-bottom: 6px;
+        }
+
+        .interactive-header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Controls */
+        .controls-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #0d1424;
+            padding: 8px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .control-group label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        select {
+            background: var(--bg-card);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        /* Audio Play Buttons */
+        .btn-action-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .play-btn {
+            background: linear-gradient(135deg, #38bdf8, #0284c7);
+            color: #0f172a;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .play-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+
+        .play-btn-secondary {
+            background: #1e2942;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+        }
+
+        .play-btn-secondary:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            box-shadow: none;
+        }
+
+        /* Piano Keyboard Container */
+        .piano-wrapper {
+            display: flex;
+            justify-content: center;
+            padding: 20px 0 10px;
+            overflow-x: auto;
+        }
+
+        .keyboard {
+            position: relative;
+            display: flex;
+            height: 200px;
+            padding: 6px;
+            background: #090d16;
+            border-radius: 10px;
+            border: 2px solid #23304a;
+            box-shadow: inset 0 3px 10px rgba(0,0,0,0.8);
+            user-select: none;
+        }
+
+        .white-key {
+            width: 44px;
+            height: 188px;
+            background: linear-gradient(180deg, #fdfdfd 0%, #e2e8f0 100%);
+            border: 1px solid #cbd5e1;
+            border-radius: 0 0 6px 6px;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #475569;
+            cursor: pointer;
+            transition: transform 0.05s ease, background 0.15s ease;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+        }
+
+        .white-key:active, .white-key.is-pressed {
+            transform: translateY(2px);
+            background: #cbd5e1;
+        }
+
+        .black-key {
+            width: 28px;
+            height: 118px;
+            background: linear-gradient(180deg, #2d3748 0%, #0f172a 100%);
+            position: absolute;
+            z-index: 2;
+            border-radius: 0 0 5px 5px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 8px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: transform 0.05s ease, background 0.15s ease;
+            box-shadow: 2px 3px 6px rgba(0,0,0,0.6);
+            border: 1px solid #1e293b;
+        }
+
+        .black-key:active, .black-key.is-pressed {
+            transform: translateY(2px);
+            background: #000000;
+        }
+
+        /* Active note styling */
+        .white-key.active, .black-key.active {
+            background: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 100%) !important;
+            color: #0f172a !important;
+            box-shadow: 0 0 16px var(--primary-glow);
+        }
+
+        .white-key.active-root, .black-key.active-root {
+            background: linear-gradient(180deg, #f472b6 0%, #ec4899 100%) !important;
+            color: #ffffff !important;
+            box-shadow: 0 0 16px rgba(236, 72, 153, 0.5);
+        }
+
+        .white-key.active-tension, .black-key.active-tension {
+            background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%) !important;
+            color: #0f172a !important;
+            box-shadow: 0 0 16px rgba(245, 158, 11, 0.5);
+        }
+
+        .key-note-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .key-interval-label {
+            font-size: 0.65rem;
+            margin-top: 2px;
+            font-weight: 600;
+        }
+
+        /* Piano Legend */
+        .piano-legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            color: var(--text-muted);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        /* Chord Info Box */
+        .chord-display-card {
+            margin-top: 25px;
+            background: #0d1424;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .chord-stat {
+            text-align: center;
+        }
+
+        .chord-stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .chord-stat-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* Theory Guide Section */
+        .section-header {
+            margin-bottom: 25px;
+        }
+
+        .section-header h2 {
+            font-size: 1.7rem;
+            margin-bottom: 6px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .badge-triad {
+            background: rgba(236, 72, 153, 0.15);
+            color: var(--accent-triad);
+            border: 1px solid rgba(236, 72, 153, 0.3);
+        }
+
+        .badge-tension {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--accent-tension);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+            gap: 20px;
+            margin-bottom: 50px;
+        }
+
+        .guide-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 22px;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .guide-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+        }
+
+        .guide-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .formula-tag {
+            font-size: 0.8rem;
+            padding: 2px 8px;
+            background: #0b0f19;
+            border-radius: 4px;
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .guide-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+        }
+
+        .notes-list {
+            background: #0b0f19;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: #cbd5e1;
+        }
+
+        /* Voicing Tips Table */
+        .table-wrapper {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 60px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.92rem;
+        }
+
+        th {
+            background: #0f1626;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(255,255,255,0.02);
+        }
+
+        footer {
+            margin-top: auto;
+            border-top: 1px solid var(--border-color);
+            padding: 25px 0;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            background: #080c14;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+            .nav-links {
+                display: none;
+            }
+            .piano-wrapper {
+                justify-content: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Nav -->
+    <nav>
+        <div class="container nav-content">
+            <a href="#" class="logo">🎹 PIANO CHORD MASTER</a>
+            <ul class="nav-links">
+                <li><a href="#interactive">เครื่องจำลองคอร์ด</a></li>
+                <li><a href="#triads">Triad Chords</a></li>
+                <li><a href="#tensions">Tension Chords</a></li>
+                <li><a href="#voicing">เทคนิคการจัด Voicing</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <header class="hero">
+        <div class="container">
+            <h1>เรียนรู้คอร์ดเปียโน<br><span>Triads & Tension Chords</span></h1>
+            <p>คู่มือคอร์ดเปียโนพร้อมระบบเสียงสมจริง (Acoustic Synthesized Audio Engine) กดฟังโน้ตเดี่ยวหรือเสียงคอร์ดได้ทันที</p>
+            <span class="sound-badge">🔊 Multi-Harmonic Sound Engine Active</span>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Interactive Piano Demo -->
+        <section id="interactive" class="interactive-section">
+            <div class="interactive-header">
+                <h2>🎛️ เครื่องมือจำลองคอร์ด & ซาวด์เปียโนสมจริง</h2>
+                <p>เลือกคีย์ รูทโน้ต และคอร์ดที่ต้องการ แล้วกด <strong>"เล่นคอร์ดพร้อมกัน"</strong> หรือ <strong>"กระจายเสียง (Arpeggio)"</strong></p>
+            </div>
+
+            <div class="controls-wrapper">
+                <div class="control-group">
+                    <label for="root-select">Root Note:</label>
+                    <select id="root-select">
+                        <option value="C">C</option>
+                        <option value="C#">C# / Db</option>
+                        <option value="D">D</option>
+                        <option value="D#">D# / Eb</option>
+                        <option value="E">E</option>
+                        <option value="F">F</option>
+                        <option value="F#">F# / Gb</option>
+                        <option value="G">G</option>
+                        <option value="G#">G# / Ab</option>
+                        <option value="A">A</option>
+                        <option value="A#">A# / Bb</option>
+                        <option value="B">B</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label for="chord-type-select">Chord Type:</label>
+                    <select id="chord-type-select">
+                        <optgroup label="--- Triads (คอร์ด 3 เสียง) ---">
+                            <option value="major">Major (1 - 3 - 5)</option>
+                            <option value="minor">Minor (1 - b3 - 5)</option>
+                            <option value="dim">Diminished (1 - b3 - b5)</option>
+                            <option value="aug">Augmented (1 - 3 - #5)</option>
+                            <option value="sus4">Sus4 (1 - 4 - 5)</option>
+                            <option value="sus2">Sus2 (1 - 2 - 5)</option>
+                        </optgroup>
+                        <optgroup label="--- 7th & Tension Chords (คอร์ดเสียงประสานขั้นสูง) ---">
+                            <option value="maj7">Major 7th (1 - 3 - 5 - 7)</option>
+                            <option value="m7">Minor 7th (1 - b3 - 5 - b7)</option>
+                            <option value="7">Dominant 7th (1 - 3 - 5 - b7)</option>
+                            <option value="add9">Add9 (1 - 3 - 5 - 9)</option>
+                            <option value="maj9">Major 9th (1 - 3 - 5 - 7 - 9)</option>
+                            <option value="m9">Minor 9th (1 - b3 - 5 - b7 - 9)</option>
+                            <option value="9">Dominant 9th (1 - 3 - 5 - b7 - 9)</option>
+                            <option value="7b9">Dominant 7(b9) (1 - 3 - 5 - b7 - b9)</option>
+                            <option value="7s9">Dominant 7(#9) (Hendrix Chord)</option>
+                            <option value="maj7s11">Major 7(#11) (Lydian Sound)</option>
+                            <option value="13">Dominant 13th (1 - 3 - 5 - b7 - 9 - 13)</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div class="btn-action-group">
+                    <button class="play-btn" id="btn-play-sound">
+                        <span>▶ เล่นคอร์ด (Strum)</span>
+                    </button>
+                    <button class="play-btn play-btn-secondary" id="btn-play-arp">
+                        <span>🎵 กระจายโน้ต (Arpeggio)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Piano Keyboard Graphic -->
+            <div class="piano-wrapper">
+                <div class="keyboard" id="piano-keyboard">
+                    <!-- Keys rendered via JS -->
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="piano-legend">
+                <div class="legend-item"><span class="dot" style="background: #ec4899;"></span> Root Note (โน้ตตัวหลัก)</div>
+                <div class="legend-item"><span class="dot" style="background: #38bdf8;"></span> Chord Tone (3rd, 5th, 7th)</div>
+                <div class="legend-item"><span class="dot" style="background: #f59e0b;"></span> Tension Note (9th, 11th, 13th)</div>
+            </div>
+
+            <!-- Current Chord Information Box -->
+            <div class="chord-display-card">
+                <div class="chord-stat">
+                    <div class="chord-stat-label">ชื่อคอร์ด</div>
+                    <div class="chord-stat-value" id="display-chord-name">C Major</div>
+                </div>
+                <div class="chord-stat">
+                    <div class="chord-stat-label">โครงสร้างสูตร (Formula)</div>
+                    <div class="chord-stat-value" id="display-chord-formula">1 - 3 - 5</div>
+                </div>
+                <div class="chord-stat">
+                    <div class="chord-stat-label">โน้ตที่ต้องกด (Notes)</div>
+                    <div class="chord-stat-value" id="display-chord-notes" style="color: #ec4899;">C - E - G</div>
+                </div>
+                <div class="chord-stat">
+                    <div class="chord-stat-label">หมวดหมู่</div>
+                    <div class="chord-stat-value" id="display-chord-category" style="color: #f59e0b;">Basic Triad</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Triad Section -->
+        <section id="triads">
+            <div class="section-header">
+                <span class="badge badge-triad">Foundation Level</span>
+                <h2>1. โครงสร้างคอร์ด Triads (คอร์ด 3 โน้ตพื้นฐาน)</h2>
+                <p style="color: var(--text-muted);">Triad คือ คอร์ดที่ประกอบด้วย 3 โน้ตซ้อนกันในระยะขั้นคู่ 3 (Tertiary Harmony) ถือเป็นกระดูกสันหลังของดนตรีสากล</p>
+            </div>
+
+            <div class="cards-grid">
+                <div class="guide-card">
+                    <h3>Major Triad <span class="formula-tag">1 - 3 - 5</span></h3>
+                    <p>ให้ความรู้สึกสว่าง สดใส มั่นคง เกิดจากคู่ 3 เมเจอร์ (4 ครึ่งเสียง) + คู่ 3 ไมเนอร์ (3 ครึ่งเสียง)</p>
+                    <div class="notes-list"><strong>ตัวอย่าง C Major:</strong> C - E - G</div>
+                </div>
+                <div class="guide-card">
+                    <h3>Minor Triad <span class="formula-tag">1 - b3 - 5</span></h3>
+                    <p>ให้ความรู้สึกเศร้า หม่น นุ่มนวล เกิดจากคู่ 3 ไมเนอร์ (3 ครึ่งเสียง) + คู่ 3 เมเจอร์ (4 ครึ่งเสียง)</p>
+                    <div class="notes-list"><strong>ตัวอย่าง C Minor:</strong> C - Eb - G</div>
+                </div>
+                <div class="guide-card">
+                    <h3>Diminished Triad <span class="formula-tag">1 - b3 - b5</span></h3>
+                    <p>ให้ความรู้สึกลุ้นระทึก ตึงเครียด เกิดจากคู่ 3 ไมเนอร์ ซ้อนกัน 2 ชั้น มีคู่ 5 ลดลงครึ่งเสียง</p>
+                    <div class="notes-list"><strong>ตัวอย่าง C Dim:</strong> C - Eb - Gb</div>
+                </div>
+                <div class="guide-card">
+                    <h3>Augmented Triad <span class="formula-tag">1 - 3 - #5</span></h3>
+                    <p>ให้ความรู้สึกลอยๆ แปลกใหม่ ชวนฝัน เกิดจากคู่ 3 เมเจอร์ ซ้อนกัน 2 ชั้น มีคู่ 5 เพิ่มขึ้นครึ่งเสียง</p>
+                    <div class="notes-list"><strong>ตัวอย่าง C Aug:</strong> C - E - G#</div>
+                </div>
+                <div class="guide-card">
+                    <h3>Suspended 4 (Sus4) <span class="formula-tag">1 - 4 - 5</span></h3>
+                    <p>แทนที่โน้ตตัวที่ 3 ด้วยตัวที่ 4 ให้ความรู้สึกเปิดกว้าง รอคอยที่จะคลี่คลายกลับไปหาคอร์ดเมเจอร์</p>
+                    <div class="notes-list"><strong>ตัวอย่าง C Sus4:</strong> C - F - G</div>
+                </div>
+                <div class="guide-card">
+                    <h3>Suspended 2 (Sus2) <span class="formula-tag">1 - 2 - 5</span></h3>
+                    <p>แทนที่โน้ตตัวที่ 3 ด้วยตัวที่ 2 ให้ความรู้สึกโปร่งสบาย สไตล์เพลงป๊อปและโฟล์ก</p>
+                    <div class="notes-list"><strong>ตัวอย่าง C Sus2:</strong> C - D - G</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tension Chords Section -->
+        <section id="tensions">
+            <div class="section-header">
+                <span class="badge badge-tension">Advanced & Jazz Harmony</span>
+                <h2>2. คอร์ด Tension (คอร์ดต่อขยายเพื่อเพิ่มสีสัน)</h2>
+                <p style="color: var(--text-muted);">Tensions คือ โน้ตที่อยู่สูงกว่าคู่ 7 ขึ้นไป (Octave ที่สอง) ได้แก่ โน้ตขั้นคู่ที่ <strong>9, 11, 13</strong> ซึ่งเพิ่มสีสัน (Color) และความลึกซึ้งให้กับเสียงประสาน</p>
+            </div>
+
+            <div class="cards-grid">
+                <div class="guide-card">
+                    <h3>Major 9th (Maj9) <span class="formula-tag">1 - 3 - 5 - 7 - 9</span></h3>
+                    <p>คอร์ดแห่งความหรูหรา นุ่มลึก เหมาะมากกับแนว Jazz, R&B, Neo-Soul และ City Pop</p>
+                    <div class="notes-list"><strong>ตัวอย่าง C Maj9:</strong> C - E - G - B - D</div>
+                </div>
+                <div class="guide-card">
+                    <h3>Minor 9th (m9) <span class="formula-tag">1 - b3 - 5 - b7 - 9</span></h3>
+                    <p>ให้ความรู้สึกเหงา โรแมนติกแบบมีสไตล์ นิยมใช้ในเพลง R&B ยุคใหม่และ Lo-fi Hip Hop</p>
+                    <div class="notes-list"><strong>ตัวอย่าง C m9:</strong> C - Eb - G - Bb - D</div>
+                </div>
+                <div class="guide-card">
+                    <h3>Add9 Chord <span class="formula-tag">1 - 3 - 5 - 9</span></h3>
+                    <p>เพิ่มโน้ตตัวที่ 9 โดยไม่ต้องมีตัวที่ 7 ให้เสียงสดใส เปล่งประกาย มักพบในเพลงป๊อปสไตล์อะคูสติก</p>
+                    <div class="notes-list"><strong>ตัวอย่าง C add9:</strong> C - E - G - D</div>
+                </div>
+                <div class="guide-card">
+                    <h3>Altered Tension: 7(b9) <span class="formula-tag">1 - 3 - 5 - b7 - b9</span></h3>
+                    <p>Tension ฝั่ง Altered ที่สร้างความตึงเครียดสูง นิยมใช้เป็นคอร์ดส่ง (V7) ก่อนเข้าคอร์ดไมเนอร์เป้าหมาย</p>
+                    <div class="notes-list"><strong>ตัวอย่าง C7(b9):</strong> C - E - G - Bb - Db</div>
+                </div>
+                <div class="guide-card">
+                    <h3>Major 7(#11) <span class="formula-tag">1 - 3 - 5 - 7 - #11</span></h3>
+                    <p>เสียง Lydian Mode ที่ให้ความรู้สึกลึกลับ มหัศจรรย์ ชวนจินตนาการ นิยมในเพลงประกอบภาพยนตร์</p>
+                    <div class="notes-list"><strong>ตัวอย่าง C Maj7(#11):</strong> C - E - G - B - F#</div>
+                </div>
+                <div class="guide-card">
+                    <h3>Dominant 13th <span class="formula-tag">1 - 3 - b7 - 9 - 13</span></h3>
+                    <p>คอร์ดส่งระดับมาสเตอร์ของสไตล์ Funk และ Jazz Blues ให้ซาวด์ที่กลมกล่อมและเต็มอิ่ม</p>
+                    <div class="notes-list"><strong>ตัวอย่าง C13:</strong> C - E - Bb - D - A</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Voicing Tips -->
+        <section id="voicing">
+            <div class="section-header">
+                <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: var(--primary); border: 1px solid rgba(56, 189, 248, 0.3);">Pro Piano Tips</span>
+                <h2>3. เทคนิคการจัด Voicing บนเปียโนแบบมืออาชีพ</h2>
+                <p style="color: var(--text-muted);">เมื่อเล่นคอร์ด Tension โน้ตจะมีมากเกินไปจนไม่ควรกดหมดทุกตัวด้วยมือขวา นี่คือวิธีแยกมือเล่นให้เสียงสะอาดไพเราะ:</p>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ประเภทคอร์ด</th>
+                            <th>มือซ้าย (Left Hand - Bass/Foundation)</th>
+                            <th>มือขวา (Right Hand - Color/Tension)</th>
+                            <th>ประโยชน์และลักษณะเสียง</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Major 9</strong> (เช่น Cmaj9)</td>
+                            <td>กด Root + 5 (C + G) หรือ Root + 7 (C + B)</td>
+                            <td>กดคอร์ด Em หรือ G major Triad (E - G - B - D)</td>
+                            <td>เสียงโปร่ง สะอาด ไม่ทึบที่ย่านต่ำ (Rootless Voicing Concept)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Minor 9</strong> (เช่น Dm9)</td>
+                            <td>กด Root (D) หรือ Root + Octave (D + D)</td>
+                            <td>กด F major 7 Triad/Chord (F - A - C - E)</td>
+                            <td>สร้าง Tension 9th (โน้ต E) ได้อย่างเป็นธรรมชาติ</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Dominant 13</strong> (เช่น G13)</td>
+                            <td>กด Root + 7 (G + F)</td>
+                            <td>กดคอร์ด E minor หรือ A major Triad</td>
+                            <td>ละโน้ต 5 (D) เพื่อเปิดพื้นที่ให้ Tension 13 (E) โดดเด่นขึ้นมา</td>
+                        </tr>
+                        <tr>
+                            <td><strong>7(#9)</strong> (เช่น E7#9)</td>
+                            <td>กด Root + 7 (E + D)</td>
+                            <td>กดคู่ 3 (G#) + #9 (G natural)</td>
+                            <td>เกิดเสียง Blue Note คลาสสิก เหมาะสำหรับดนตรี Blues / Funk / Rock</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>🎹 Piano Chord Master &bull; ออกแบบเพื่อการเรียนรู้ทฤษฎีดนตรีและคอร์ดเปียโนอย่างเข้าใจง่าย</p>
+        </div>
+    </footer>
+
+    <!-- Web Audio API Synthesizer (Realistic Acoustic Piano Emulation) -->
+    <script>
+        const NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+        
+        const CHORD_DATA = {
+            "major": { name: "Major", formula: "1 - 3 - 5", intervals: [0, 4, 7], category: "Triad" },
+            "minor": { name: "Minor", formula: "1 - b3 - 5", intervals: [0, 3, 7], category: "Triad" },
+            "dim": { name: "Diminished", formula: "1 - b3 - b5", intervals: [0, 3, 6], category: "Triad" },
+            "aug": { name: "Augmented", formula: "1 - 3 - #5", intervals: [0, 4, 8], category: "Triad" },
+            "sus4": { name: "Sus4", formula: "1 - 4 - 5", intervals: [0, 5, 7], category: "Suspended" },
+            "sus2": { name: "Sus2", formula: "1 - 2 - 5", intervals: [0, 2, 7], category: "Suspended" },
+            "maj7": { name: "Major 7th", formula: "1 - 3 - 5 - 7", intervals: [0, 4, 7, 11], category: "7th Chord" },
+            "m7": { name: "Minor 7th", formula: "1 - b3 - 5 - b7", intervals: [0, 3, 7, 10], category: "7th Chord" },
+            "7": { name: "Dominant 7th", formula: "1 - 3 - 5 - b7", intervals: [0, 4, 7, 10], category: "7th Chord" },
+            "add9": { name: "Add9", formula: "1 - 3 - 5 - 9", intervals: [0, 4, 7, 14], category: "Tension Chord" },
+            "maj9": { name: "Major 9th", formula: "1 - 3 - 5 - 7 - 9", intervals: [0, 4, 7, 11, 14], category: "Tension Chord" },
+            "m9": { name: "Minor 9th", formula: "1 - b3 - 5 - b7 - 9", intervals: [0, 3, 7, 10, 14], category: "Tension Chord" },
+            "9": { name: "Dominant 9th", formula: "1 - 3 - 5 - b7 - 9", intervals: [0, 4, 7, 10, 14], category: "Tension Chord" },
+            "7b9": { name: "Dominant 7(b9)", formula: "1 - 3 - 5 - b7 - b9", intervals: [0, 4, 7, 10, 13], category: "Altered Tension" },
+            "7s9": { name: "Dominant 7(#9)", formula: "1 - 3 - b7 - #9", intervals: [0, 4, 10, 15], category: "Altered Tension" },
+            "maj7s11": { name: "Major 7(#11)", formula: "1 - 3 - 5 - 7 - #11", intervals: [0, 4, 7, 11, 18], category: "Altered Tension" },
+            "13": { name: "Dominant 13th", formula: "1 - 3 - b7 - 9 - 13", intervals: [0, 4, 10, 14, 21], category: "Tension Chord" }
+        };
+
+        const intervalNames = {
+            0: "Root", 2: "2/9", 3: "b3", 4: "3", 5: "4/11", 6: "b5", 7: "5",
+            8: "#5", 10: "b7", 11: "7", 13: "b9", 14: "9", 15: "#9", 18: "#11", 21: "13"
+        };
+
+        const TOTAL_KEYS = 25; // 2 Octaves + 1 (C3 to C5)
+        const START_MIDI = 48; // C3
+
+        // Advanced Web Audio API Engine
+        let audioCtx = null;
+        let masterGain = null;
+        let reverbNode = null;
+
+        function initAudioEngine() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                masterGain = audioCtx.createGain();
+                masterGain.gain.setValueAtTime(0.8, audioCtx.currentTime);
+
+                // Simple algorithmic impulse response for piano room reverb
+                const sampleRate = audioCtx.sampleRate;
+                const length = sampleRate * 1.5;
+                const impulse = audioCtx.createBuffer(2, length, sampleRate);
+                const left = impulse.getChannelData(0);
+                const right = impulse.getChannelData(1);
+
+                for (let i = 0; i < length; i++) {
+                    const decay = Math.exp(-i / (sampleRate * 0.4));
+                    left[i] = (Math.random() * 2 - 1) * decay;
+                    right[i] = (Math.random() * 2 - 1) * decay;
+                }
+
+                reverbNode = audioCtx.createConvolver();
+                reverbNode.buffer = impulse;
+
+                const reverbGain = audioCtx.createGain();
+                reverbGain.gain.value = 0.18; // Subdued natural room ambiance
+
+                masterGain.connect(audioCtx.destination);
+                masterGain.connect(reverbNode);
+                reverbNode.connect(reverbGain);
+                reverbGain.connect(audioCtx.destination);
+            }
+
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function midiToFreq(midi) {
+            return 440 * Math.pow(2, (midi - 69) / 12);
+        }
+
+        /* 
+           Realistic Acoustic Piano Voice:
+           Combines Fundamental (Sine/Triangle) + Overtones (Harmonics) + Hammer Attack Filter Envelope
+        */
+        function triggerPianoKey(midiNote, delay = 0, duration = 2.4, velocity = 0.7) {
+            initAudioEngine();
+            const ctx = audioCtx;
+            const now = ctx.currentTime + delay;
+            const freq = midiToFreq(midiNote);
+
+            // Voice Gain
+            const voiceGain = ctx.createGain();
+            voiceGain.gain.setValueAtTime(0.0001, now);
+            // Instant hammer strike attack
+            voiceGain.gain.linearRampToValueAtTime(velocity * 0.35, now + 0.005);
+            // Initial natural string pluck decay
+            voiceGain.gain.exponentialRampToValueAtTime(velocity * 0.15, now + 0.15);
+            // Long ringing sustain tail
+            voiceGain.gain.exponentialRampToValueAtTime(0.00001, now + duration);
+
+            // Lowpass Filter for hammer dynamics (brighter attack, warm tail)
+            const filter = ctx.createBiquadFilter();
+            filter.type = "lowpass";
+            filter.frequency.setValueAtTime(freq * 8, now);
+            filter.frequency.exponentialRampToValueAtTime(freq * 1.5, now + 0.35);
+
+            // Harmonic partials (Simulating piano string overtones)
+            const partials = [
+                { ratio: 1, gainVal: 0.7, type: "triangle" },
+                { ratio: 2, gainVal: 0.3, type: "sine" },
+                { ratio: 3, gainVal: 0.15, type: "sine" },
+                { ratio: 4, gainVal: 0.05, type: "sine" }
+            ];
+
+            partials.forEach(p => {
+                const osc = ctx.createOscillator();
+                const pGain = ctx.createGain();
+
+                osc.type = p.type;
+                // Slight inharmonicity / detune for acoustic warmth
+                const detune = (Math.random() * 2 - 1) * 2; 
+                osc.frequency.setValueAtTime((freq * p.ratio) + (detune * 0.1), now);
+
+                pGain.gain.value = p.gainVal;
+                osc.connect(pGain);
+                pGain.connect(filter);
+
+                osc.start(now);
+                osc.stop(now + duration);
+            });
+
+            filter.connect(voiceGain);
+            voiceGain.connect(masterGain);
+        }
+
+        // Generate Keyboard UI
+        const keyboardEl = document.getElementById("piano-keyboard");
+        
+        function buildKeyboardUI() {
+            keyboardEl.innerHTML = "";
+            let whiteKeyIndex = 0;
+
+            for (let semitone = 0; semitone < TOTAL_KEYS; semitone++) {
+                const noteIndex = semitone % 12;
+                const noteName = NOTES[noteIndex];
+                const isBlack = noteName.includes("#");
+
+                if (!isBlack) {
+                    const whiteKey = document.createElement("div");
+                    whiteKey.className = "white-key";
+                    whiteKey.dataset.semitone = semitone;
+                    whiteKey.id = `key-${semitone}`;
+                    whiteKey.innerHTML = `<span class="key-note-label">${noteName}</span><span class="key-interval-label"></span>`;
+                    
+                    // Single note click trigger
+                    whiteKey.addEventListener("pointerdown", () => {
+                        triggerPianoKey(START_MIDI + semitone, 0, 1.8, 0.8);
+                        whiteKey.classList.add("is-pressed");
+                    });
+                    whiteKey.addEventListener("pointerup", () => whiteKey.classList.remove("is-pressed"));
+                    whiteKey.addEventListener("pointerleave", () => whiteKey.classList.remove("is-pressed"));
+
+                    keyboardEl.appendChild(whiteKey);
+                    whiteKeyIndex++;
+                }
+            }
+
+            const whiteKeyWidth = 44;
+            const blackKeyWidth = 28;
+            let currentWhitePos = 0;
+
+            for (let semitone = 0; semitone < TOTAL_KEYS; semitone++) {
+                const noteIndex = semitone % 12;
+                const noteName = NOTES[noteIndex];
+                const isBlack = noteName.includes("#");
+
+                if (isBlack) {
+                    const blackKey = document.createElement("div");
+                    blackKey.className = "black-key";
+                    blackKey.dataset.semitone = semitone;
+                    blackKey.id = `key-${semitone}`;
+                    
+                    const leftPos = (currentWhitePos * whiteKeyWidth) - (blackKeyWidth / 2) + 6;
+                    blackKey.style.left = `${leftPos}px`;
+                    blackKey.innerHTML = `<span class="key-note-label">${noteName}</span><span class="key-interval-label"></span>`;
+
+                    blackKey.addEventListener("pointerdown", (e) => {
+                        e.stopPropagation();
+                        triggerPianoKey(START_MIDI + semitone, 0, 1.8, 0.85);
+                        blackKey.classList.add("is-pressed");
+                    });
+                    blackKey.addEventListener("pointerup", () => blackKey.classList.remove("is-pressed"));
+                    blackKey.addEventListener("pointerleave", () => blackKey.classList.remove("is-pressed"));
+
+                    keyboardEl.appendChild(blackKey);
+                } else {
+                    currentWhitePos++;
+                }
+            }
+        }
+
+        function updateChordVisualizer() {
+            const root = document.getElementById("root-select").value;
+            const chordType = document.getElementById("chord-type-select").value;
+            const chordInfo = CHORD_DATA[chordType];
+
+            const rootOffset = NOTES.indexOf(root);
+            const activeSemitones = chordInfo.intervals.map(interval => rootOffset + interval);
+
+            // Reset all keys
+            document.querySelectorAll(".white-key, .black-key").forEach(key => {
+                key.classList.remove("active", "active-root", "active-tension");
+                const intervalSpan = key.querySelector(".key-interval-label");
+                if (intervalSpan) intervalSpan.innerText = "";
+            });
+
+            const chordNotesList = [];
+
+            // Activate chord keys
+            activeSemitones.forEach((st, idx) => {
+                let displaySemitone = st;
+                if (displaySemitone >= TOTAL_KEYS) {
+                    displaySemitone -= 12; // Fold to visible range
+                }
+
+                const keyEl = document.getElementById(`key-${displaySemitone}`);
+                const intervalVal = chordInfo.intervals[idx];
+                const noteName = NOTES[(rootOffset + intervalVal) % 12];
+                chordNotesList.push(noteName);
+
+                if (keyEl) {
+                    if (idx === 0) {
+                        keyEl.classList.add("active-root");
+                    } else if (intervalVal >= 13) {
+                        keyEl.classList.add("active-tension");
+                    } else {
+                        keyEl.classList.add("active");
+                    }
+
+                    const intervalSpan = keyEl.querySelector(".key-interval-label");
+                    if (intervalSpan) {
+                        intervalSpan.innerText = intervalNames[intervalVal] || "";
+                    }
+                }
+            });
+
+            // Update details
+            document.getElementById("display-chord-name").innerText = `${root} ${chordInfo.name}`;
+            document.getElementById("display-chord-formula").innerText = chordInfo.formula;
+            document.getElementById("display-chord-notes").innerText = chordNotesList.join(" - ");
+            document.getElementById("display-chord-category").innerText = chordInfo.category;
+        }
+
+        function playChord(isArpeggio = false) {
+            const root = document.getElementById("root-select").value;
+            const chordType = document.getElementById("chord-type-select").value;
+            const chordInfo = CHORD_DATA[chordType];
+            const rootOffset = NOTES.indexOf(root);
+
+            chordInfo.intervals.forEach((interval, idx) => {
+                const midiNote = START_MIDI + rootOffset + interval;
+                const delay = isArpeggio ? idx * 0.18 : idx * 0.035; // Strum vs Arp timing
+                const duration = isArpeggio ? 2.5 : 3.0;
+                triggerPianoKey(midiNote, delay, duration, 0.75);
+
+                // Visual key press animation sync
+                let displaySemitone = rootOffset + interval;
+                if (displaySemitone >= TOTAL_KEYS) displaySemitone -= 12;
+                const keyEl = document.getElementById(`key-${displaySemitone}`);
+                if (keyEl) {
+                    setTimeout(() => {
+                        keyEl.classList.add("is-pressed");
+                        setTimeout(() => keyEl.classList.remove("is-pressed"), 200);
+                    }, delay * 1000);
+                }
+            });
+        }
+
+        // Event Listeners
+        document.getElementById("root-select").addEventListener("change", updateChordVisualizer);
+        document.getElementById("chord-type-select").addEventListener("change", updateChordVisualizer);
+        document.getElementById("btn-play-sound").addEventListener("click", () => playChord(false));
+        document.getElementById("btn-play-arp").addEventListener("click", () => playChord(true));
+
+        // Init
+        buildKeyboardUI();
+        updateChordVisualizer();
+    </script>
+</body>
+</html>

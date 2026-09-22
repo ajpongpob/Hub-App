@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VOCAL QUEST — Interactive Singing Exercise</title>
+<style>
+:root{--bg:#f5f3ee;--ink:#1f1f1d;--muted:#77736c;--card:#fff;--line:#ddd8ce;--accent:#d66d43;--good:#4f9369}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1180px;margin:auto;padding:28px 20px 55px}.hero{display:flex;justify-content:space-between;align-items:center;gap:20px}.tag{font-size:12px;font-weight:850;letter-spacing:.12em;background:#e9e4dc;border-radius:99px;padding:7px 10px}.hero h1{font-size:clamp(40px,7vw,76px);line-height:.9;letter-spacing:-4px;margin:15px 0 10px}.hero p{color:var(--muted);font-size:17px}.score{background:#fff;border:1px solid var(--line);border-radius:20px;padding:15px 20px;text-align:center;min-width:125px}.score b{display:block;font-size:35px}.score small{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:18px;margin-top:17px;box-shadow:0 10px 35px #00000008}.controls{display:flex;flex-wrap:wrap;gap:9px;margin:13px 0}.btn{border:1px solid var(--line);background:white;border-radius:12px;padding:10px 15px;font-weight:800;cursor:pointer}.primary{background:var(--ink);color:white;border-color:var(--ink)}input[type=range]{accent-color:var(--accent);vertical-align:middle}
+.map{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}.level{padding:18px;border:1px solid var(--line);border-radius:18px;background:#faf9f6;cursor:pointer;min-height:130px}.level:hover{transform:translateY(-2px)}.level .num{font-size:12px;color:var(--muted);font-weight:800}.level h3{margin:8px 0 4px}.level p{margin:0;color:#777;font-size:13px;line-height:1.45}.level.active{border:2px solid var(--accent);background:#fff7f2}
+.game{position:relative;height:390px;overflow:hidden;background:#faf9f6;border-radius:19px;border:1px solid var(--line)}.game .sky{position:absolute;inset:0;background:radial-gradient(circle at 70% 25%,#eee5d6,transparent 27%),radial-gradient(circle at 20% 80%,#e8e3da,transparent 32%)}.target{position:absolute;width:62px;height:62px;border:4px solid var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;left:50%;top:42%;transform:translate(-50%,-50%);box-shadow:0 0 0 10px #d66d4315}.target.hit{animation:hit .45s ease}@keyframes hit{50%{transform:translate(-50%,-50%) scale(1.45);opacity:.4}100%{transform:translate(-50%,-50%) scale(.8);opacity:0}}.ship{position:absolute;left:10%;top:75%;font-size:43px;transition:left .15s linear,top .15s linear;filter:drop-shadow(0 5px 4px #0002)}.trail{position:absolute;left:0;right:0;top:0;bottom:0;pointer-events:none}.trail i{position:absolute;width:6px;height:6px;background:var(--accent);border-radius:50%;opacity:.55}
+.feedback{text-align:center;margin-top:13px;min-height:30px;font-weight:850;font-size:19px}.feedback.good{color:var(--good)}.feedback.bad{color:#b15d3c}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.stat{background:#f4f1eb;border-radius:14px;padding:13px}.stat b{display:block;font-size:24px}.stat span{font-size:12px;color:var(--muted)}
+.notation{height:190px;position:relative;overflow:hidden;border-radius:15px;background:#fff}.notation svg{width:100%;height:100%}.noteCursor{position:absolute;top:12px;bottom:12px;width:3px;background:var(--accent);left:10%;opacity:0}
+.tips{display:grid;grid-template-columns:1fr 1fr;gap:14px}.tip{background:#f7f5f0;border-radius:16px;padding:15px;line-height:1.55;color:#666}
+.singer{position:absolute;right:6%;bottom:5%;font-size:100px}.bubble{position:absolute;right:10%;top:10%;background:white;padding:11px 14px;border-radius:18px;box-shadow:0 5px 20px #0001;font-weight:800}.bubble:after{content:"";position:absolute;bottom:-8px;left:28px;border:8px solid transparent;border-top-color:white}
+@media(max-width:800px){.map{grid-template-columns:1fr 1fr}.stats{grid-template-columns:1fr 1fr}.tips{grid-template-columns:1fr}.hero{align-items:flex-start}.singer{font-size:70px}}
+@media(max-width:500px){.map{grid-template-columns:1fr}.hero{display:block}.score{margin-top:18px}.game{height:330px}}
+</style>
+</head>
+<body>
+<main>
+<header class="hero">
+ <div><span class="tag">INTERACTIVE VOCAL EXERCISE</span><h1>VOCAL<br>QUEST</h1><p>Turn your voice into a game. 🎤</p></div>
+ <div class="score"><small>HIGH SCORE</small><b id="high">0</b><small>points</small></div>
+</header>
+
+<section class="card">
+ <b>Choose your quest</b>
+ <div class="map">
+  <div class="level active" data-level="0"><div class="num">LEVEL 01</div><h3>🎯 Catch the Note</h3><p>ร้องให้ตรงกับโน้ตเพื่อจับเป้าหมาย</p></div>
+  <div class="level" data-level="1"><div class="num">LEVEL 02</div><h3>🎨 Voice Drawing</h3><p>วาดเส้นด้วยเสียงของคุณ</p></div>
+  <div class="level" data-level="2"><div class="num">LEVEL 03</div><h3>🐰 Echo Challenge</h3><p>ฟังแล้วร้องกลับจากความจำ</p></div>
+  <div class="level" data-level="3"><div class="num">LEVEL 04</div><h3>🔥 Sing the Phrase</h3><p>ร้องวลีให้ครบและรักษาความแม่นยำ</p></div>
+ </div>
+</section>
+
+<section class="card">
+ <div style="display:flex;justify-content:space-between;gap:10px"><b id="title">LEVEL 01 — CATCH THE NOTE</b><span id="noteLabel">Target: C4</span></div>
+ <div class="notation">
+  <svg viewBox="0 0 1000 190" preserveAspectRatio="none">
+   <g stroke="#333" stroke-width="1.5"><line x1="40" y1="50" x2="960" y2="50"/><line x1="40" y1="70" x2="960" y2="70"/><line x1="40" y1="90" x2="960" y2="90"/><line x1="40" y1="110" x2="960" y2="110"/><line x1="40" y1="130" x2="960" y2="130"/></g>
+   <text x="45" y="121" font-size="75" font-family="serif">𝄞</text><g id="notesSvg"></g>
+  </svg><div class="noteCursor" id="noteCursor"></div>
+ </div>
+ <div class="controls">
+  <button class="btn primary" id="play">▶ Play Target</button><button class="btn" id="stop">■ Stop</button><button class="btn" id="next">Next Note →</button>
+  <label class="btn">Tempo <input id="tempo" type="range" min="50" max="140" value="80"> <b id="bpm">80</b></label>
+ </div>
+</section>
+
+<section class="card">
+ <div class="game">
+  <div class="sky"></div><div class="target" id="target">C4</div><div class="ship" id="ship">🚀</div><div class="trail" id="trail"></div>
+  <div class="bubble" id="bubble">ร้องให้ตรงกับเป้าหมาย!</div><div class="singer">🎤</div>
+ </div>
+ <div class="feedback" id="feedback">กด Start Microphone แล้วลองร้องตาม</div>
+ <div class="controls" style="justify-content:center"><button class="btn primary" id="mic">🎙 Start Microphone</button><button class="btn" id="replay">↻ ฟังโน้ตอีกครั้ง</button></div>
+ <div class="stats">
+  <div class="stat"><b id="accuracy">—</b><span>PITCH ACCURACY</span></div>
+  <div class="stat"><b id="combo">0</b><span>COMBO</span></div>
+  <div class="stat"><b id="points">0</b><span>POINTS</span></div>
+  <div class="stat"><b id="cents">—</b><span>DEVIATION</span></div>
+ </div>
+</section>
+
+<section class="card">
+ <b>Quest Guide</b>
+ <div class="tips" style="margin-top:12px">
+  <div class="tip"><b>🎯 Catch the Note</b><br>เสียงของคุณจะควบคุมยานอวกาศ ถ้าร้องตรง pitch ยานจะพุ่งเข้าหาเป้าหมายและได้คะแนน</div>
+  <div class="tip"><b>🎨 Voice Drawing</b><br>ลองลากเสียงขึ้น–ลง ระบบจะวาด contour จากเสียงจริงของคุณ</div>
+  <div class="tip"><b>🐰 Echo Challenge</b><br>ฟัง phrase หนึ่งครั้ง จากนั้นร้องกลับโดยไม่ดูโน้ต</div>
+  <div class="tip"><b>🔥 Sing the Phrase</b><br>ร้องต่อเนื่องทั้งวลีเพื่อสะสม Combo และคะแนน</div>
+ </div>
+</section>
+</main>
+
+<script>
+const phrases=[['C4','D4','E4','F4','G4','F4','E4','D4'],['C4','E4','G4','E4','D4','F4','A4','F4'],['G4','E4','C4','D4','F4','E4','D4','C4']];
+const levels=[
+ {title:'LEVEL 01 — CATCH THE NOTE',seq:phrases[0]},
+ {title:'LEVEL 02 — VOICE DRAWING',seq:phrases[1]},
+ {title:'LEVEL 03 — ECHO CHALLENGE',seq:phrases[2]},
+ {title:'LEVEL 04 — SING THE PHRASE',seq:['C4','D4','E4','G4','G4','F4','E4','C4']}
+];
+const midi={C:0,'C#':1,D:2,'D#':3,E:4,F:5,'F#':6,G:7,'G#':8,A:9,'A#':10,B:11};
+function toMidi(n){let m=n.match(/^([A-G]#?)(\\d)$/);return 12*(+m[2]+1)+midi[m[1]]}
+function hz(n){return 440*Math.pow(2,(toMidi(n)-69)/12)}
+let level=0,idx=0,audio=null,analyser=null,stream=null,raf=null,timer=null,score=0,combo=0,high=+localStorage.vocalQuestHigh||0,trace=[],hits=0,samples=0;
+document.getElementById('high').textContent=high;
+const svg=document.getElementById('notesSvg');
+function renderNotes(){svg.innerHTML='';levels[level].seq.forEach((n,i)=>{let x=135+i*105,y=110-(toMidi(n)-60)*5,g=document.createElementNS('http://www.w3.org/2000/svg','g');g.innerHTML=`<ellipse cx="${x}" cy="${y}" rx="9" ry="7"/><line x1="${x+8}" y1="${y}" x2="${x+8}" y2="${y-43}" stroke="#222" stroke-width="2"/>`;svg.appendChild(g)})}
+function setTarget(){let n=levels[level].seq[idx];document.getElementById('target').textContent=n;document.getElementById('noteLabel').textContent='Target: '+n;document.getElementById('noteCursor').style.opacity=1;document.getElementById('noteCursor').style.left=(10+idx*10.5)+'%'}
+function tone(n,d=.75){audio=audio||new(window.AudioContext||window.webkitAudioContext)();audio.resume();let o=audio.createOscillator(),g=audio.createGain();o.type='sine';o.frequency.value=hz(n);g.gain.setValueAtTime(.0001,audio.currentTime);g.gain.exponentialRampToValueAtTime(.2,audio.currentTime+.02);g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+d-.04);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+d)}
+function playTarget(){tone(levels[level].seq[idx]);document.getElementById('feedback').textContent='ฟังระดับเสียง แล้วร้องตาม…'}
+function next(){idx=(idx+1)%levels[level].seq.length;setTarget()}
+function stop(){clearInterval(timer);timer=null;document.getElementById('noteCursor').style.opacity=0}
+document.getElementById('play').onclick=()=>{playTarget();clearInterval(timer);let beat=60000/+document.getElementById('tempo').value;timer=setInterval(()=>{next();tone(levels[level].seq[idx])},beat)}
+document.getElementById('stop').onclick=stop;document.getElementById('next').onclick=()=>{stop();next()};document.getElementById('replay').onclick=playTarget;
+document.getElementById('tempo').oninput=e=>document.getElementById('bpm').textContent=e.target.value;
+document.querySelectorAll('.level').forEach(el=>el.onclick=()=>{level=+el.dataset.level;idx=0;combo=0;renderNotes();setTarget();document.getElementById('title').textContent=levels[level].title;document.querySelectorAll('.level').forEach(x=>x.classList.remove('active'));el.classList.add('active')});
+function detect(buf,sr){let rms=0;for(let x of buf)rms+=x*x;rms=Math.sqrt(rms/buf.length);if(rms<.012)return null;let bestLag=0,best=-Infinity;for(let lag=Math.floor(sr/900);lag<=Math.floor(sr/70);lag++){let c=0;for(let i=0;i<buf.length-lag;i++)c+=buf[i]*buf[i+lag];if(c>best){best=c;bestLag=lag}}return bestLag?sr/bestLag:null}
+async function micStart(){
+ try{stream=await navigator.mediaDevices.getUserMedia({audio:true});audio=audio||new(window.AudioContext||window.webkitAudioContext)();let src=audio.createMediaStreamSource(stream);analyser=audio.createAnalyser();analyser.fftSize=2048;src.connect(analyser);document.getElementById('mic').textContent='■ Stop Microphone';listen()}catch(e){alert('กรุณาอนุญาตการใช้ Microphone ใน browser')}
+}
+function micStop(){if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;analyser=null;cancelAnimationFrame(raf);document.getElementById('mic').textContent='🎙 Start Microphone'}
+document.getElementById('mic').onclick=()=>stream?micStop():micStart();
+function listen(){if(!analyser)return;let b=new Float32Array(analyser.fftSize);analyser.getFloatTimeDomainData(b);let f=detect(b,audio.sampleRate);if(f){let m=69+12*Math.log2(f/440),target=toMidi(levels[level].seq[idx]),diff=(m-target)*100;let pct=Math.max(0,Math.round(100-Math.abs(diff)/2));document.getElementById('accuracy').textContent=pct+'%';document.getElementById('cents').textContent=Math.round(diff)+'¢';samples++;
+let ship=document.getElementById('ship'), targetEl=document.getElementById('target'), y=75-(m-target)*12, x=10+(idx/(levels[level].seq.length-1))*75;ship.style.left=Math.max(3,Math.min(88,x))+'%';ship.style.top=Math.max(12,Math.min(82,y))+'%';
+if(Math.abs(diff)<35){combo++;hits++;score+=10+combo*2;document.getElementById('feedback').textContent='✓ PERFECT! โน้ตตรงมาก';document.getElementById('feedback').className='feedback good';targetEl.classList.remove('hit');void targetEl.offsetWidth;targetEl.classList.add('hit');if(combo>=3)document.getElementById('bubble').textContent='🔥 COMBO x'+combo}else{combo=0;document.getElementById('feedback').textContent=diff>0?'↑ สูงไปนิด':'↓ ต่ำไปนิด';document.getElementById('feedback').className='feedback bad'}
+document.getElementById('combo').textContent=combo;document.getElementById('points').textContent=score;if(score>high){high=score;localStorage.vocalQuestHigh=high;document.getElementById('high').textContent=high}
+if(level===1){trace.push({x:Math.min(800,trace.length*9),y:120-(m-60)*18});if(trace.length>88)trace.shift()}
+}
+raf=requestAnimationFrame(listen)}
+renderNotes();setTarget();
+</script>
+</body>
+</html>

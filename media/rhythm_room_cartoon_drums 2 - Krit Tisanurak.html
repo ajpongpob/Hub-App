@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ห้องซ้อมดนตรี — รวมวงให้ตรงจังหวะ</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#07111f;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+.app{max-width:1050px;margin:auto;padding:8px}.card{background:#101d30;border:1px solid #315074;border-radius:18px;overflow:hidden;box-shadow:0 16px 45px #0008}
+.scene{position:relative;background:#182a40}.scene svg{display:block;width:100%;height:auto}
+.hot{position:absolute;border:2px solid transparent;background:#ffffff00;border-radius:12px;cursor:pointer;touch-action:manipulation}
+.hot:active{background:#ffe66d22;border-color:#ffe66d}
+.controls{padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+button,select,input{font:inherit}button,select{border:1px solid #466788;background:#1b3655;color:#fff;border-radius:10px;padding:10px 12px;font-weight:700}button.primary{background:#e8b936;color:#182131;border-color:#ffe993}
+label{font-size:.82rem;color:#b9cbe0}.control{background:#0a1626;padding:9px;border-radius:10px;border:1px solid #2d4763}input[type=range]{width:100%;accent-color:#e8b936}
+.status{margin:0 12px 12px;padding:10px;background:#081321;border-radius:10px;color:#dbeafe;min-height:40px}
+.drum-panel{padding:12px;border-top:1px solid #315074}.drum-panel h2{font-size:1rem;margin:0 0 8px}.pads{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.pad{min-height:100px;border-radius:16px;color:#fff;border:2px solid #5c7591;box-shadow:inset 0 -7px 0 #0004;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;touch-action:manipulation;user-select:none}
+.pad b{font-size:1rem}.pad small{opacity:.75}.pad:active,.pad.flash{transform:scale(.96);filter:brightness(1.35)}
+.hh{background:linear-gradient(#687a8d,#35485b)}.sd{background:linear-gradient(#d48c48,#914b17)}.tm{background:linear-gradient(#8979d4,#51439a)}.bd{background:linear-gradient(#3ea993,#126b5a)}
+.score{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:9px}.stat{background:#081321;border:1px solid #29435f;border-radius:10px;text-align:center;padding:8px}.stat b{display:block;font-size:1.25rem}.stat span{font-size:.72rem;color:#9fb1c8}
+@media(max-width:650px){.app{padding:4px}.card{border-radius:12px}.controls{grid-template-columns:1fr 1fr}.pads{grid-template-columns:repeat(2,1fr)}.pad{min-height:105px}.scene svg{min-height:250px}}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="card">
+<div class="scene">
+<!-- ฉากการ์ตูนแบบฝังใน HTML: สมาชิกวงยืนคนละมุม -->
+<svg viewBox="0 0 1000 560" role="img" aria-label="ห้องซ้อมดนตรีสไตล์การ์ตูน">
+<defs>
+ <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#304866"/><stop offset="1" stop-color="#14263d"/></linearGradient>
+ <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#513f3b"/><stop offset="1" stop-color="#201b20"/></linearGradient>
+ <radialGradient id="light"><stop stop-color="#fff3ad" stop-opacity=".9"/><stop offset="1" stop-color="#fff3ad" stop-opacity="0"/></radialGradient>
+</defs>
+<rect width="1000" height="560" fill="url(#wall)"/>
+<path d="M0 365 Q500 320 1000 365 V560 H0Z" fill="url(#floor)"/>
+<ellipse cx="500" cy="110" rx="320" ry="180" fill="url(#light)" opacity=".45"/>
+<!-- acoustic panels -->
+<g opacity=".55" fill="#1a2b42"><rect x="55" y="70" width="105" height="170" rx="8"/><rect x="840" y="65" width="105" height="175" rx="8"/><rect x="210" y="45" width="80" height="105" rx="8"/><rect x="710" y="45" width="80" height="105" rx="8"/></g>
+<!-- guitar player left -->
+<g transform="translate(150,170)">
+ <ellipse cx="55" cy="215" rx="65" ry="14" fill="#0005"/>
+ <circle cx="55" cy="35" r="28" fill="#c98661"/><path d="M28 34Q35 0 66 7Q84 16 80 43Q58 27 28 34" fill="#30251f"/>
+ <path d="M38 65L20 155L65 175L84 82Z" fill="#4e78b6"/><path d="M28 88L-10 122" stroke="#c98661" stroke-width="16" stroke-linecap="round"/><path d="M75 92L115 125" stroke="#c98661" stroke-width="16" stroke-linecap="round"/>
+ <path d="M20 155L5 213M65 175L82 213" stroke="#253047" stroke-width="19" stroke-linecap="round"/>
+ <ellipse cx="73" cy="126" rx="28" ry="38" fill="#b9783d" stroke="#e0a05e" stroke-width="5"/><path d="M60 103L99 63" stroke="#7b4e2d" stroke-width="7"/>
+</g>
+<!-- keyboard player right -->
+<g transform="translate(760,175)">
+ <ellipse cx="45" cy="215" rx="65" ry="14" fill="#0005"/>
+ <circle cx="45" cy="35" r="28" fill="#9c684d"/><path d="M18 32Q28 0 62 7Q78 18 70 40Q45 20 18 32" fill="#171a21"/>
+ <path d="M27 64L8 158L58 170L73 80Z" fill="#8b5fb6"/><path d="M24 89L-10 124M68 90L105 123" stroke="#9c684d" stroke-width="15" stroke-linecap="round"/>
+ <path d="M15 155L2 213M58 170L75 213" stroke="#29243a" stroke-width="19" stroke-linecap="round"/>
+ <rect x="-30" y="118" width="105" height="35" rx="5" fill="#222833" stroke="#8390a1" stroke-width="4"/>
+ <path d="M-18 128h82M-18 138h82" stroke="#e6e9ed" stroke-width="3"/>
+</g>
+<!-- singer front/center -->
+<g transform="translate(405,115)">
+ <ellipse cx="90" cy="370" rx="85" ry="16" fill="#0006"/>
+ <circle cx="90" cy="45" r="31" fill="#b97756"/><path d="M60 44Q62 5 98 8Q124 15 118 48Q92 24 60 44" fill="#3b2924"/>
+ <path d="M67 78L35 250L130 250L112 83Z" fill="#d1d5db"/>
+ <path d="M50 100L12 165M112 100L150 157" stroke="#b97756" stroke-width="17" stroke-linecap="round"/>
+ <path d="M55 245L42 365M115 245L132 365" stroke="#252a37" stroke-width="22" stroke-linecap="round"/>
+ <circle cx="157" cy="152" r="13" fill="#222"/><rect x="153" y="163" width="8" height="88" fill="#222"/>
+</g>
+<!-- drummer behind kit -->
+<g transform="translate(500,230)">
+ <ellipse cx="0" cy="255" rx="180" ry="20" fill="#0006"/>
+ <circle cx="0" cy="-5" r="28" fill="#b97856"/><path d="M-27 -8Q-15 -42 20 -35Q40 -20 29 6Q0 -12 -27 -8" fill="#24242a"/>
+ <path d="M-35 28L-70 160L30 160L35 35Z" fill="#3e7b68"/>
+ <path d="M-25 62L-100 105M22 62L95 105" stroke="#b97856" stroke-width="14" stroke-linecap="round"/>
+ <path d="M-55 145L-75 235M25 145L55 235" stroke="#263044" stroke-width="20" stroke-linecap="round"/>
+ <!-- drum kit -->
+ <ellipse cx="0" cy="185" rx="55" ry="48" fill="#24384b" stroke="#9eb2c7" stroke-width="5"/>
+ <circle cx="-80" cy="165" r="35" fill="#b95e43" stroke="#e5b08e" stroke-width="5"/>
+ <circle cx="75" cy="155" r="30" fill="#8e78c6" stroke="#c6b9ef" stroke-width="5"/>
+ <ellipse cx="-105" cy="105" rx="55" ry="9" fill="#d5a43b" stroke="#f5d77d" stroke-width="3"/>
+ <ellipse cx="105" cy="88" rx="48" ry="8" fill="#d5a43b" stroke="#f5d77d" stroke-width="3"/>
+ <path d="M-20 160L-105 105M20 150L105 88" stroke="#f3d6a0" stroke-width="4"/>
+</g>
+<!-- title -->
+<text x="35" y="40" fill="#fff" font-size="25" font-weight="800">🎵 RHYTHM REHEARSAL ROOM</text>
+<text x="37" y="66" fill="#c8d7e9" font-size="15">รวมวงให้ตรงจังหวะ • คุณคือมือกลอง</text>
+</svg>
+
+<!-- hotspot controls -->
+<button class="hot" id="sceneStart" style="left:7%;top:78%;width:20%;height:13%" aria-label="เริ่มซ้อม"></button>
+<button class="hot" id="scenePause" style="left:27%;top:78%;width:18%;height:13%" aria-label="หยุด"></button>
+</div>
+
+<div class="controls">
+ <div class="control"><label>BPM <b id="bpmText">80</b></label><input id="bpm" type="range" min="50" max="140" value="80"></div>
+ <div class="control"><label>Grouping</label><select id="group"><option>4–4</option><option>2–2</option><option>3–3–2</option><option>3–2–3</option><option>2–2–3</option></select></div>
+ <button class="primary" id="start">▶ เริ่มซ้อม</button><button id="pause">Ⅱ หยุด</button>
+ <button id="reset">↺ เริ่มใหม่</button><button id="sound">🔊 เสียงเปิด</button>
+</div>
+<div class="status" id="status">พร้อมซ้อม — กดเริ่ม แล้วใช้ปุ่มกลองด้านล่างได้เลย</div>
+
+<div class="drum-panel">
+<h2>🥁 แผงกลอง — แตะเล่นได้ทันที</h2>
+<div class="pads">
+ <button class="pad hh" data-drum="hh"><b>🔔 ไฮแฮต</b><small>A / แตะ</small></button>
+ <button class="pad sd" data-drum="sd"><b>🥁 สแนร์</b><small>S / แตะ</small></button>
+ <button class="pad tm" data-drum="tm"><b>🪘 ทอม</b><small>D / แตะ</small></button>
+ <button class="pad bd" data-drum="bd"><b>🦶 กระเดื่อง</b><small>F / แตะ</small></button>
+</div>
+<div class="score">
+ <div class="stat"><b id="hits">0</b><span>ตีตรงจังหวะ</span></div>
+ <div class="stat"><b id="miss">0</b><span>พลาด</span></div>
+ <div class="stat"><b id="acc">0%</b><span>ความแม่นยำ</span></div>
+</div>
+</div>
+</div>
+</div>
+
+<script>
+let ctx=null,running=false,timer=null,beat=-1,lastBeat=0,sound=true,hits=0,miss=0;
+const $=id=>document.getElementById(id);
+function initAudio(){if(!ctx)ctx=new(window.AudioContext||window.webkitAudioContext)();if(ctx.state==="suspended")ctx.resume()}
+function beep(freq,dur=.07,type="square",gain=.045){
+ if(!sound)return;initAudio();const o=ctx.createOscillator(),g=ctx.createGain();o.type=type;o.frequency.value=freq;
+ g.gain.setValueAtTime(gain,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+dur);
+ o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+dur)
+}
+function tick(){
+ if(!running)return;beat=(beat+1)%4;lastBeat=performance.now();
+ beep(beat===0?880:660);
+ $("status").textContent=`กำลังซ้อม • จังหวะ ${beat+1}/4 • BPM ${$("bpm").value} • Grouping ${$("group").value}`;
+ timer=setTimeout(tick,60000/+$("bpm").value)
+}
+function start(){initAudio();if(running)return;running=true;tick()}
+function pause(){running=false;clearTimeout(timer);timer=null;$("status").textContent="หยุดชั่วคราว — กดเริ่มซ้อมเพื่อเล่นต่อ"}
+function reset(){pause();beat=-1;hits=0;miss=0;update();$("status").textContent="เริ่มใหม่แล้ว — พร้อมฝึกอีกครั้ง"}
+function update(){let total=hits+miss,acc=total?Math.round(hits/total*100):0;$("hits").textContent=hits;$("miss").textContent=miss;$("acc").textContent=acc+"%"}
+function play(kind){
+ const el=document.querySelector(`[data-drum="${kind}"]`);el.classList.add("flash");setTimeout(()=>el.classList.remove("flash"),100);
+ if(kind==="hh")beep(6500,.04,"square",.03);else if(kind==="sd"){beep(180,.08,"triangle",.08);beep(1200,.05,"square",.025)}
+ else if(kind==="tm")beep(145,.16,"sine",.1);else beep(70,.2,"sine",.18);
+ if(!running){$("status").textContent="เสียงกลองทำงานแล้ว — กดเริ่มซ้อมเพื่อวัดความตรงจังหวะ";return}
+ const interval=60000/+$("bpm").value,diff=Math.min(performance.now()-lastBeat,Math.abs(interval-(performance.now()-lastBeat)));
+ const mission=$("group").value;
+ if(diff<=180){hits++;$("status").textContent="🎯 ตรงจังหวะ!";}
+ else{miss++;$("status").textContent="เกือบแล้ว — ฟัง Pulse แล้วแตะใหม่";}
+ update()
+}
+$("bpm").oninput=()=>{$("bpmText").textContent=$("bpm").value};
+$("start").onclick=start;$("pause").onclick=pause;$("reset").onclick=reset;
+$("sceneStart").onclick=start;$("scenePause").onclick=pause;
+$("sound").onclick=()=>{sound=!sound;$("sound").textContent=sound?"🔊 เสียงเปิด":"🔇 เสียงปิด";if(sound)initAudio()};
+document.querySelectorAll(".pad").forEach(p=>p.addEventListener("pointerdown",()=>play(p.dataset.drum)));
+document.addEventListener("keydown",e=>{const m={a:"hh",s:"sd",d:"tm",f:"bd"};if(m[e.key.toLowerCase()])play(m[e.key.toLowerCase()])});
+</script>
+</body>
+</html>

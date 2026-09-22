@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>เครื่องจำลองขลุ่ยเพียงออ 3D - Correct Fingering System</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0b0b0b; color: #eee; font-family: system-ui, sans-serif; user-select: none; }
+  header { height: 60px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #38342c; background: #10100f; }
+  .brand { font-size: 18px; font-weight: 800; color: #e7b84e; }
+  .meta-tag { font-size: 12px; background: #261e12; color: #d1a03e; border: 1px solid #54401c; padding: 4px 8px; border-radius: 4px; }
+  .layout { display: grid; grid-template-columns: 1fr 340px; gap: 12px; padding: 12px; height: calc(100vh - 60px); }
+  .viewer { position: relative; background: radial-gradient(circle, #35322d, #080808); border: 1px solid #38342c; border-radius: 12px; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+  #flute-svg { height: 85%; filter: drop-shadow(0 20px 15px #000); cursor: grab; transition: transform 0.1s ease-out; }
+  #flute-svg:active { cursor: grabbing; }
+  .panel { background: #141312; border: 1px solid #38342c; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+  h2 { font-size: 14px; color: #f0c45c; margin: 0; }
+  .btn-group { display: flex; gap: 6px; }
+  .opt-btn { flex: 1; padding: 8px 4px; background: #211f1b; border: 1px solid #403b33; color: #aaa; border-radius: 6px; font-size: 12px; cursor: pointer; text-align: center; }
+  .opt-btn.active { background: #3a2b15; border-color: #d1a03e; color: #ffd56a; font-weight: bold; }
+  .notes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .note-btn { border: 1px solid #403b33; background: #211f1b; color: #ddd; border-radius: 8px; padding: 12px 0; cursor: pointer; font-weight: bold; text-align: center; }
+  .note-btn.active { border-color: #d1a03e; background: #3a2b15; color: #ffd56a; }
+  .play-btn { width: 100%; padding: 14px; border: 1px solid #d1a03e; background: #3a2b15; color: #ffd56a; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: auto; }
+  .play-btn:hover { background: #4d3a1d; }
+  
+  /* นิ้วปิดรู (Closed) = สีสว่าง, นิ้วเปิดรู (Open) = รูสีมืด */
+  .hole { fill: #1a1a1a; stroke: #555; stroke-width: 1.5; transition: all 0.2s; }
+  .hole.closed { fill: #ffd56a; stroke: #fff; filter: drop-shadow(0 0 6px #ffd56a); }
+  
+  .status { font-size: 11px; color: #888; text-align: center; line-height: 1.4; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">🪈 เครื่องจำลองขลุ่ยเพียงออ 3D</div>
+  <div class="meta-tag">Correct Thai Flute Fingering</div>
+</header>
+
+<div class="layout">
+  <div class="viewer" id="viewport">
+    <svg id="flute-svg" viewBox="0 0 120 600" width="160">
+      <defs>
+        <linearGradient id="wood-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#2d1a0a" />
+          <stop offset="25%" stop-color="#7a461e" />
+          <stop offset="65%" stop-color="#5c3415" />
+          <stop offset="100%" stop-color="#1b0e05" />
+        </linearGradient>
+      </defs>
+
+      <!-- เลาขลุ่ย -->
+      <rect x="42" y="20" width="36" height="560" rx="18" fill="url(#wood-grad)" stroke="#1a0d04" stroke-width="2"/>
+      <rect x="42" y="20" width="36" height="25" rx="5" fill="#140a03" opacity="0.9"/>
+      <ellipse cx="60" cy="30" rx="7" ry="3.5" fill="#000"/>
+      <rect x="55" y="65" width="10" height="6" rx="1" fill="#000"/>
+
+      <!-- รูขลุ่ยเรียงจากบนลงล่าง (Hole 1 - Hole 7) -->
+      <g id="holes">
+        <circle id="h1" class="hole closed" cx="60" cy="180" r="5.5"/>
+        <circle id="h2" class="hole closed" cx="60" cy="225" r="5.5"/>
+        <circle id="h3" class="hole closed" cx="60" cy="270" r="5.5"/>
+        <circle id="h4" class="hole closed" cx="60" cy="315" r="5.5"/>
+        <circle id="h5" class="hole closed" cx="60" cy="360" r="5.5"/>
+        <circle id="h6" class="hole closed" cx="60" cy="405" r="5.5"/>
+        <circle id="h7" class="hole closed" cx="60" cy="450" r="5.5"/>
+      </g>
+
+      <line x1="42" y1="130" x2="78" y2="130" stroke="#d1a03e" stroke-width="1.5" opacity="0.5"/>
+      <line x1="42" y1="535" x2="78" y2="535" stroke="#d1a03e" stroke-width="1.5" opacity="0.5"/>
+    </svg>
+  </div>
+
+  <div class="panel">
+    <h2>เทคนิคการเป่า (Articulation)</h2>
+    <div class="btn-group" id="articulation-group">
+      <div class="opt-btn active" data-art="long">ยาว (Long)</div>
+      <div class="opt-btn" data-art="trill">สะบัด (Trill)</div>
+      <div class="opt-btn" data-art="sadoa">สะเดาะ (Sadoa)</div>
+    </div>
+
+    <h2>เลือกโน้ตขลุ่ย (คีย์ C)</h2>
+    <div class="notes">
+      <div class="note-btn active" data-note="C5" data-freq="523.25">ด (C5)</div>
+      <div class="note-btn" data-note="D5" data-freq="587.33">ร (D5)</div>
+      <div class="note-btn" data-note="E5" data-freq="659.25">ม (E5)</div>
+      <div class="note-btn" data-note="F5" data-freq="698.46">ฟ (F5)</div>
+      <div class="note-btn" data-note="G5" data-freq="783.99">ซ (G5)</div>
+      <div class="note-btn" data-note="A5" data-freq="880.00">ล (A5)</div>
+      <div class="note-btn" data-note="B5" data-freq="987.77">ท (B5)</div>
+      <div class="note-btn" data-note="C6" data-freq="1046.50">ด' (C6)</div>
+    </div>
+
+    <button class="play-btn" id="play-btn">🔊 เป่าขลุ่ย</button>
+    <div class="status" id="status-text">สีสว่าง = ปิดนิ้ว | สีมืด = เปิดนิ้ว</div>
+  </div>
+</div>
+
+<script>
+  let audioCtx = null;
+  let currentFreq = 523.25;
+  let currentNote = 'C5';
+  let currentArt = 'long';
+
+  // ตารางการปิดรูขลุ่ยไทย ( Array แสดง ID รูที่ต้อง "ปิดนิ้ว" )
+  // h1 = บนสุด, h7 = ล่างสุด
+  const fingeringTable = {
+    'C5': ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'h7'], // ปิดหมดทุกรู
+    'D5': ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'],         // เปิด h7 (รูล่างสุด)
+    'E5': ['h1', 'h2', 'h3', 'h4', 'h5'],               // เปิด h6, h7
+    'F5': ['h1', 'h2', 'h3', 'h4'],                     // เปิด h5, h6, h7
+    'G5': ['h1', 'h2', 'h3'],                           // เปิด h4-h7
+    'A5': ['h1', 'h2'],                                 // เปิด h3-h7
+    'B5': ['h1'],                                       // เปิด h2-h7
+    'C6': []                                            // เปิดหมดทุกรู (เสียงสูง)
+  };
+
+  function updateFingering(note) {
+    // รีเซ็ตทุกรูเป็นเปิด (ไม่ถูกกด)
+    document.querySelectorAll('.hole').forEach(h => h.classList.remove('closed'));
+    
+    // ใส่ class 'closed' ให้รูที่ถูกปิดนิ้ว
+    const closedHoles = fingeringTable[note] || [];
+    closedHoles.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('closed');
+    });
+  }
+
+  function initAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  }
+
+  function createNoiseBuffer() {
+    const bufferSize = audioCtx.sampleRate * 2;
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const output = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      output[i] = Math.random() * 2 - 1;
+    }
+    return buffer;
+  }
+
+  function playFluteSound(freq, articulation) {
+    initAudio();
+    const now = audioCtx.currentTime;
+
+    const osc1 = audioCtx.createOscillator();
+    const osc2 = audioCtx.createOscillator();
+    osc1.type = 'sine';
+    osc2.type = 'triangle';
+
+    osc1.frequency.setValueAtTime(freq, now);
+    osc2.frequency.setValueAtTime(freq * 2, now);
+
+    const lfo = audioCtx.createOscillator();
+    const lfoGain = audioCtx.createGain();
+    lfo.frequency.setValueAtTime(5.5, now);
+    lfoGain.gain.setValueAtTime(freq * 0.015, now);
+    lfo.connect(osc1.frequency);
+    lfo.start(now);
+
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = createNoiseBuffer();
+    const noiseFilter = audioCtx.createBiquadFilter();
+    noiseFilter.type = 'bandpass';
+    noiseFilter.frequency.setValueAtTime(freq * 1.5, now);
+    noiseFilter.Q.setValueAtTime(3.0, now);
+
+    const noiseGain = audioCtx.createGain();
+    noiseGain.gain.setValueAtTime(0.04, now);
+    noise.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+
+    const mainGain = audioCtx.createGain();
+    let duration = 1.8;
+
+    if (articulation === 'trill') {
+      osc1.frequency.setValueAtTime(freq, now);
+      osc1.frequency.setValueAtTime(freq * 1.12, now + 0.1);
+      osc1.frequency.setValueAtTime(freq, now + 0.2);
+      osc1.frequency.setValueAtTime(freq * 1.12, now + 0.3);
+      osc1.frequency.setValueAtTime(freq, now + 0.4);
+      mainGain.gain.setValueAtTime(0, now);
+      mainGain.gain.linearRampToValueAtTime(0.6, now + 0.05);
+      mainGain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+      duration = 1.2;
+    } else if (articulation === 'sadoa') {
+      mainGain.gain.setValueAtTime(0, now);
+      mainGain.gain.linearRampToValueAtTime(0.9, now + 0.02);
+      mainGain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+      duration = 0.6;
+    } else {
+      mainGain.gain.setValueAtTime(0, now);
+      mainGain.gain.linearRampToValueAtTime(0.5, now + 0.15);
+      mainGain.gain.setValueAtTime(0.5, now + 1.2);
+      mainGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    }
+
+    const g2 = audioCtx.createGain();
+    g2.gain.setValueAtTime(0.2, now);
+
+    osc1.connect(mainGain);
+    osc2.connect(g2);
+    g2.connect(mainGain);
+    noiseGain.connect(mainGain);
+
+    mainGain.connect(audioCtx.destination);
+
+    osc1.start(now);
+    osc2.start(now);
+    noise.start(now);
+
+    osc1.stop(now + duration);
+    osc2.stop(now + duration);
+    noise.stop(now + duration);
+    lfo.stop(now + duration);
+  }
+
+  function triggerPlay() {
+    playFluteSound(currentFreq, currentArt);
+    document.getElementById('status-text').innerText = `กำลังเล่น: โน้ต ${currentNote} (${currentArt})`;
+  }
+
+  // --- Event Listeners ---
+  document.querySelectorAll('#articulation-group .opt-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#articulation-group .opt-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentArt = btn.getAttribute('data-art');
+      triggerPlay();
+    });
+  });
+
+  document.querySelectorAll('.note-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.note-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentNote = btn.getAttribute('data-note');
+      currentFreq = parseFloat(btn.getAttribute('data-freq'));
+
+      // อัปเดตนิ้วจับขลุ่ย
+      updateFingering(currentNote);
+      triggerPlay();
+    });
+  });
+
+  document.getElementById('play-btn').addEventListener('click', triggerPlay);
+
+  // Rotatable 3D Viewport
+  const svg = document.getElementById('flute-svg');
+  let rotY = 0, isDrag = false, startX = 0;
+
+  document.getElementById('viewport').addEventListener('mousedown', (e) => {
+    isDrag = true;
+    startX = e.clientX;
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!isDrag) return;
+    rotY += (e.clientX - startX) * 0.5;
+    startX = e.clientX;
+    svg.style.transform = `rotateY(${rotY}deg)`;
+  });
+
+  window.addEventListener('mouseup', () => isDrag = false);
+
+  // เริ่มต้นด้วยการตั้งค่ารูขลุ่ย C5 (ปิดทุกรู)
+  updateFingering('C5');
+</script>
+</body>
+</html>
